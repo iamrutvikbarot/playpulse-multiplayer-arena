@@ -18,30 +18,34 @@ export const GameResultModal: React.FC<GameResultModalProps> = ({
   onRematch,
   onReturnToLobby,
 }) => {
-  if (room.gameStatus !== 'game-over') return null;
+  const isGameOver = room.gameStatus === 'game-over';
 
   // Determine winner or draw
   let winnerId: string | null = null;
   let isDraw = false;
 
-  if (room.currentGame === 'tic-tac-toe') {
-    winnerId = room.gameState?.winnerId;
-    isDraw = winnerId === 'draw';
-  } else if (room.currentGame === 'rps-battle') {
-    winnerId = room.gameState?.matchWinnerId;
-  } else if (room.currentGame === 'ludo') {
-    winnerId = room.gameState?.winnerRankings?.[0] || null;
-  } else if (room.currentGame === 'card-battle') {
-    winnerId = room.gameState?.winnerId;
-  } else if (room.currentGame === 'mini-racing') {
-    winnerId = room.gameState?.winnerRankings?.[0] || null;
+  if (isGameOver) {
+    if (room.currentGame === 'tic-tac-toe') {
+      winnerId = room.gameState?.winnerId;
+      isDraw = winnerId === 'draw';
+    } else if (room.currentGame === 'rps-battle') {
+      winnerId = room.gameState?.matchWinnerId;
+    } else if (room.currentGame === 'ludo') {
+      winnerId = room.gameState?.winnerRankings?.[0] || null;
+    } else if (room.currentGame === 'card-battle') {
+      winnerId = room.gameState?.winnerId;
+    } else if (room.currentGame === 'mini-racing') {
+      winnerId = room.gameState?.winnerRankings?.[0] || null;
+    }
   }
 
   const winnerPlayer = room.players.find((p) => p.id === winnerId);
-  const isMeWinner = winnerId === currentUserId;
+  const isMeWinner = Boolean(winnerId && winnerId === currentUserId);
   const hasVotedRematch = room.rematchVotes.includes(currentUserId);
 
   useEffect(() => {
+    if (!isGameOver) return;
+
     if (isMeWinner) {
       sound.playWin();
       try {
@@ -57,7 +61,9 @@ export const GameResultModal: React.FC<GameResultModalProps> = ({
     } else {
       sound.playDefeat();
     }
-  }, [isMeWinner, isDraw]);
+  }, [isGameOver, isMeWinner, isDraw]);
+
+  if (!isGameOver) return null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-in fade-in zoom-in-95 duration-200">

@@ -42,7 +42,7 @@ export const CharacterPickerModal: React.FC<CharacterPickerModalProps> = ({
         </div>
 
         {/* Characters Bento Grid */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 py-4 overflow-y-auto pr-1">
+        <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 py-4 overflow-y-auto pr-1">
           {CHARACTERS.map((char) => {
             const isSelected = char.id === selectedCharacterId;
             return (

@@ -396,6 +396,49 @@ export class RoomManager {
       }
       return;
     }
+
+    // 13. PLAYER LEAVE
+    if (msg.type === 'PLAYER_LEAVE') {
+      const { roomCode, playerId } = msg.payload || {};
+      const room = this.rooms.get(roomCode);
+      if (!room) return;
+
+      const player = room.players.find((p) => p.id === playerId);
+      if (!player) return;
+
+      // If the Host leaves the lobby, close the room and remove all players
+      if (player.isHost || room.hostId === playerId) {
+        room.players.forEach((p) => {
+          if (p.isBot) return;
+          const socket = this.playerSockets.get(p.id);
+          if (socket && socket.readyState === WebSocket.OPEN) {
+            this.send(socket, {
+              type: 'ROOM_CLOSED',
+              payload: { message: 'The room host left. The room has been closed.' },
+            });
+          }
+        });
+
+        this.rooms.delete(roomCode);
+        this.gameEngines.delete(roomCode);
+        return;
+      }
+
+      // Non-host player leaves
+      room.players = room.players.filter((p) => p.id !== playerId);
+      room.chatMessages.push({
+        id: `msg_${Date.now()}`,
+        senderId: 'system',
+        senderName: 'System',
+        characterId: '',
+        text: `${player.name} left the room.`,
+        timestamp: Date.now(),
+        isSystem: true,
+      });
+
+      this.broadcastRoom(roomCode);
+      return;
+    }
   }
 
   private startGame(room: RoomState) {
@@ -647,19 +690,31 @@ export class RoomManager {
     if (player) {
       player.isConnected = false;
 
-      // Grace period before removing player
+      // If the Host disconnects while in the lobby, close the room immediately for everyone
+      if (player.isHost && room.gameStatus === 'lobby') {
+        room.players.forEach((p) => {
+          if (p.isBot || p.id === playerId) return;
+          const socket = this.playerSockets.get(p.id);
+          if (socket && socket.readyState === WebSocket.OPEN) {
+            this.send(socket, {
+              type: 'ROOM_CLOSED',
+              payload: { message: 'The room host disconnected. The room has been closed.' },
+            });
+          }
+        });
+
+        this.rooms.delete(roomCode);
+        this.gameEngines.delete(roomCode);
+        return;
+      }
+
+      // Non-host disconnect or mid-game disconnect handling
       setTimeout(() => {
         const currentRoom = this.rooms.get(roomCode);
         if (!currentRoom) return;
         const pl = currentRoom.players.find((p) => p.id === playerId);
         if (pl && !pl.isConnected) {
           currentRoom.players = currentRoom.players.filter((p) => p.id !== playerId);
-
-          // If host left, assign new host
-          if (pl.isHost && currentRoom.players.length > 0) {
-            const nextHost = currentRoom.players.find((p) => !p.isBot) || currentRoom.players[0];
-            if (nextHost) nextHost.isHost = true;
-          }
 
           // If room empty, clean up
           if (currentRoom.players.length === 0) {
@@ -669,7 +724,7 @@ export class RoomManager {
             this.broadcastRoom(roomCode);
           }
         }
-      }, 10000);
+      }, 5000);
 
       this.broadcastRoom(roomCode);
     }

@@ -37,6 +37,7 @@ export function useMultiplayer(): MultiplayerHook {
   const socketRef = useRef<WebSocket | null>(null);
   const pingStartRef = useRef<number>(0);
   const reconnectTimeoutRef = useRef<any>(null);
+  const pendingQueueRef = useRef<WSMessage[]>([]);
 
   // Ephemeral session ID stored in sessionStorage
   const [currentUserId] = useState<string>(() => {
@@ -53,6 +54,8 @@ export function useMultiplayer(): MultiplayerHook {
   const send = useCallback((msg: WSMessage) => {
     if (socketRef.current && socketRef.current.readyState === WebSocket.OPEN) {
       socketRef.current.send(JSON.stringify({ ...msg, senderId: currentUserId, timestamp: Date.now() }));
+    } else {
+      pendingQueueRef.current.push(msg);
     }
   }, [currentUserId]);
 
@@ -66,8 +69,14 @@ export function useMultiplayer(): MultiplayerHook {
     }
 
     setConnecting(true);
-    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const wsUrl = `${protocol}//${window.location.host}`;
+    const customWsUrl = process.env.NEXT_PUBLIC_WS_URL;
+    let wsUrl: string;
+    if (customWsUrl) {
+      wsUrl = customWsUrl;
+    } else {
+      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+      wsUrl = `${protocol}//${window.location.host}/ws`;
+    }
 
     const ws = new WebSocket(wsUrl);
     socketRef.current = ws;
@@ -80,6 +89,14 @@ export function useMultiplayer(): MultiplayerHook {
       // Ping to measure latency
       pingStartRef.current = Date.now();
       ws.send(JSON.stringify({ type: 'PING' }));
+
+      // Flush any queued messages
+      if (pendingQueueRef.current.length > 0) {
+        pendingQueueRef.current.forEach((m) => {
+          ws.send(JSON.stringify({ ...m, senderId: currentUserId, timestamp: Date.now() }));
+        });
+        pendingQueueRef.current = [];
+      }
     };
 
     ws.onmessage = (event) => {
@@ -95,6 +112,13 @@ export function useMultiplayer(): MultiplayerHook {
         if (msg.type === 'ROOM_SYNC') {
           setRoom(msg.payload as RoomState);
           setError(null);
+          return;
+        }
+
+        if (msg.type === 'ROOM_CLOSED') {
+          setRoom(null);
+          setError(msg.payload?.message || 'Room was closed by the host');
+          sound.playDefeat();
           return;
         }
 
@@ -281,8 +305,14 @@ export function useMultiplayer(): MultiplayerHook {
 
   const leaveRoom = useCallback(() => {
     sound.playClick();
+    if (room) {
+      send({
+        type: 'PLAYER_LEAVE',
+        payload: { roomCode: room.code, playerId: currentUserId },
+      });
+    }
     setRoom(null);
-  }, []);
+  }, [send, room, currentUserId]);
 
   const currentPlayer = room?.players.find((p) => p.id === currentUserId) || null;
   const isHost = currentPlayer?.isHost || false;

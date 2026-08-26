@@ -1,16 +1,20 @@
+'use client';
+
 import React, { useEffect, useState } from 'react';
 import { BackgroundEffect } from './components/BackgroundEffect';
 import { ChatOverlay } from './components/ChatOverlay';
 import { GameHeader } from './components/GameHeader';
 import { GameResultModal } from './components/GameResultModal';
+import { ServerLoader } from './components/ServerLoader';
+import { Toast } from './components/Toast';
 import { CardBattleView } from './games/CardBattleView';
 import { LudoView } from './games/LudoView';
 import { MiniRacingView } from './games/MiniRacingView';
 import { RPSBattleView } from './games/RPSBattleView';
 import { TicTacToeView } from './games/TicTacToeView';
 import { useMultiplayer } from './network/useMultiplayer';
-import { LandingPage } from './pages/LandingPage';
-import { RoomLobby } from './pages/RoomLobby';
+import { LandingPage } from './views/LandingPage';
+import { RoomLobby } from './views/RoomLobby';
 import { GameId } from './types/game';
 
 export default function App() {
@@ -39,18 +43,45 @@ export default function App() {
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [lastReadChatCount, setLastReadChatCount] = useState(0);
 
-  // Check URL query parameters for auto-room join
+  // Track initial room code from URL and previous room state
+  const initialRoomAttemptedRef = React.useRef(false);
+  const wasInRoomRef = React.useRef(false);
+
+  // Auto-join room from URL query parameter
   useEffect(() => {
-    if (typeof window !== 'undefined') {
+    if (typeof window !== 'undefined' && connected && !room && !initialRoomAttemptedRef.current) {
       const params = new URLSearchParams(window.location.search);
       const roomParam = params.get('room');
-      if (roomParam && !room) {
+      if (roomParam) {
+        initialRoomAttemptedRef.current = true;
         const savedName = localStorage.getItem('playpulse_saved_name') || 'Guest Player';
-        const savedChar = localStorage.getItem('playpulse_saved_character') || 'char_knight';
-        joinRoom(roomParam.toUpperCase(), savedName, savedChar);
+        const savedChar = localStorage.getItem('playpulse_saved_character') || 'char_ironman';
+        joinRoom(roomParam.trim().toUpperCase(), savedName, savedChar);
       }
     }
-  }, [joinRoom, room]);
+  }, [connected, joinRoom, room]);
+
+  // Sync URL when in room, and clean URL only when leaving an active room or on join error
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const url = new URL(window.location.href);
+
+      if (room && room.code) {
+        wasInRoomRef.current = true;
+        if (url.searchParams.get('room') !== room.code) {
+          url.searchParams.set('room', room.code);
+          window.history.replaceState({}, '', url.pathname + url.search);
+        }
+      } else if (wasInRoomRef.current || error) {
+        // Player was in a room and left, or room join failed
+        if (url.searchParams.has('room')) {
+          url.searchParams.delete('room');
+          window.history.replaceState({}, '', url.pathname + (url.search ? url.search : ''));
+        }
+        if (!room) wasInRoomRef.current = false;
+      }
+    }
+  }, [room, error]);
 
   const messagesCount = room?.chatMessages.length || 0;
   const unreadChatCount = isChatOpen ? 0 : Math.max(0, messagesCount - lastReadChatCount);
@@ -64,24 +95,20 @@ export default function App() {
 
   return (
     <div className="relative min-h-screen bg-[#080A12] text-zinc-100 flex flex-col selection:bg-purple-500 selection:text-white font-sans antialiased overflow-x-hidden">
-      {/* Dynamic Animated Particle Canvas Background */}
+      {/* Dynamic Animated 3D Cyber Particle Canvas Background */}
       <BackgroundEffect />
 
-      {/* Connection Indicator when disconnected/connecting */}
-      {!connected && (
-        <div className="fixed top-2 right-2 z-50 px-3 py-1 rounded-full bg-amber-500/20 border border-amber-500/40 text-amber-300 text-[11px] font-bold flex items-center gap-1.5 backdrop-blur-md">
-          <span className="w-2 h-2 rounded-full bg-amber-400 animate-ping" />
-          <span>{connecting ? 'Connecting to Server...' : 'Reconnecting...'}</span>
-        </div>
-      )}
+      {/* Epic Cyber Server Connection Loader */}
+      {!connected && <ServerLoader isConnecting={connecting} />}
+
+      {/* Floating Global Toast Notification */}
+      <Toast message={error} onClose={clearError} />
 
       {/* Screen 1: Landing Page (No active room) */}
       {!room && (
         <LandingPage
           onCreateRoom={(name, charId, initialGame) => createRoom(name, charId, initialGame)}
           onJoinRoom={(code, name, charId) => joinRoom(code, name, charId)}
-          error={error}
-          onClearError={clearError}
         />
       )}
 
