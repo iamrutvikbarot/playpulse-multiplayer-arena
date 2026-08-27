@@ -300,7 +300,12 @@ export const ChatOverlay: React.FC<ChatOverlayProps> = ({
             ) : (
               <div className="space-y-2">
                 <button
-                  onClick={() => onStartCall(true)}
+                  onClick={async () => {
+                    const success = await onStartCall(true);
+                    if (success) {
+                      onClose();
+                    }
+                  }}
                   className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-purple-600 via-indigo-600 to-purple-700 hover:from-purple-500 hover:to-indigo-500 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-lg shadow-purple-950/50 cursor-pointer active:scale-98 transition-transform"
                 >
                   <Video className="w-4 h-4" />
@@ -308,7 +313,12 @@ export const ChatOverlay: React.FC<ChatOverlayProps> = ({
                 </button>
 
                 <button
-                  onClick={() => onStartCall(false)}
+                  onClick={async () => {
+                    const success = await onStartCall(false);
+                    if (success) {
+                      onClose();
+                    }
+                  }}
                   className="w-full py-2.5 px-4 rounded-xl bg-[#11172A] hover:bg-[#182038] text-zinc-200 border border-white/10 font-semibold text-xs flex items-center justify-center gap-2 cursor-pointer transition-colors"
                 >
                   <Mic className="w-4 h-4 text-emerald-400" />

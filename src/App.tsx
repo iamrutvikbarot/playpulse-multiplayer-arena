@@ -59,10 +59,10 @@ export default function App() {
 
   // Connect WebRTC signaling dispatcher to multiplayer socket messages
   useEffect(() => {
-    registerSignalingHandler((data) => {
+    return registerSignalingHandler((data) => {
       webRTC.handleSignalingMessage(data);
     });
-  }, [registerSignalingHandler, webRTC]);
+  }, [registerSignalingHandler, webRTC.handleSignalingMessage]);
 
   // Check URL query parameters for auto-room join
   useEffect(() => {
@@ -91,8 +91,14 @@ export default function App() {
     if (webRTC.isInCall) {
       webRTC.leaveCall();
     } else {
+      setIsChatOpen(false);
       await webRTC.startCall(true);
     }
+  };
+
+  const handleStartCall = async (withVideo?: boolean) => {
+    setIsChatOpen(false);
+    return await webRTC.startCall(withVideo);
   };
 
   return (
@@ -231,7 +237,7 @@ export default function App() {
           permissionError={webRTC.permissionError}
           currentUserId={currentUserId}
           players={room.players}
-          onStartCall={webRTC.startCall}
+          onStartCall={handleStartCall}
           onLeaveCall={webRTC.leaveCall}
           onToggleAudio={webRTC.toggleAudio}
           onToggleVideo={webRTC.toggleVideo}
@@ -254,7 +260,7 @@ export default function App() {
           isInCall={webRTC.isInCall}
           isAudioMuted={webRTC.isAudioMuted}
           isVideoOff={webRTC.isVideoOff}
-          onStartCall={webRTC.startCall}
+          onStartCall={handleStartCall}
           onLeaveCall={webRTC.leaveCall}
           onToggleAudio={webRTC.toggleAudio}
           onToggleVideo={webRTC.toggleVideo}

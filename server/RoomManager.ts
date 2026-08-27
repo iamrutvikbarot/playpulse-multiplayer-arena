@@ -816,31 +816,8 @@ export class RoomManager {
 
     const player = room.players.find((p) => p.id === playerId);
     if (player) {
-      player.isConnected = false;
-
-      // Grace period before removing player or disbanding if host
-      setTimeout(() => {
-        const currentRoom = this.rooms.get(roomCode);
-        if (!currentRoom) return;
-        const pl = currentRoom.players.find((p) => p.id === playerId);
-        if (pl && !pl.isConnected) {
-          if (pl.isHost) {
-            // Disband room if host disconnected and didn't reconnect
-            this.handlePlayerLeave(roomCode, playerId);
-          } else {
-            currentRoom.players = currentRoom.players.filter((p) => p.id !== playerId);
-            const remainingHumans = currentRoom.players.filter((p) => !p.isBot);
-            if (remainingHumans.length === 0) {
-              this.rooms.delete(roomCode);
-              this.gameEngines.delete(roomCode);
-            } else {
-              this.broadcastRoom(roomCode);
-            }
-          }
-        }
-      }, 5000);
-
-      this.broadcastRoom(roomCode);
+      // Immediately handle player leave and disband room if host or empty
+      this.handlePlayerLeave(roomCode, playerId);
     }
   }
 

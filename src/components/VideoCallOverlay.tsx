@@ -14,19 +14,15 @@ import {
   PhoneCall,
   PhoneOff,
   Radio,
-  Settings,
   Sparkles,
   Users,
   Video,
   VideoOff,
-  Volume2,
-  VolumeX,
 } from 'lucide-react';
 import React, { useState } from 'react';
 import { Player } from '../types/game';
 import { PeerMediaInfo } from '../network/useWebRTC';
 import { VideoTile } from './VideoTile';
-import { sound } from '../utils/audio';
 
 interface VideoCallOverlayProps {
   isInCall: boolean;
@@ -65,7 +61,6 @@ export const VideoCallOverlay: React.FC<VideoCallOverlayProps> = ({
   permissionError,
   currentUserId,
   players,
-  onStartCall,
   onLeaveCall,
   onToggleAudio,
   onToggleVideo,
@@ -73,8 +68,6 @@ export const VideoCallOverlay: React.FC<VideoCallOverlayProps> = ({
   onToggleMirror,
 }) => {
   const [isMinimized, setIsMinimized] = useState(false);
-  const [showPermModal, setShowPermModal] = useState(false);
-  const [dockPosition, setDockPosition] = useState<'bottom-right' | 'top-right' | 'bottom-left'>('bottom-right');
 
   const me = players.find((p) => p.id === currentUserId) || {
     id: currentUserId,
@@ -87,26 +80,43 @@ export const VideoCallOverlay: React.FC<VideoCallOverlayProps> = ({
     joinedAt: Date.now(),
   };
 
-  const otherPlayers = players.filter((p) => p.id !== currentUserId);
+  // Only include human players who are in the call or connected
+  const activeRemotePlayers = players.filter(
+    (p) => p.id !== currentUserId && !p.isBot && (peers[p.id] || p.isConnected)
+  );
+  const totalInCall = activeRemotePlayers.length + 1;
 
   if (!isInCall) {
     return null;
   }
 
-  // Position classes for floating mode
-  const dockPositionClasses = {
-    'bottom-right': 'bottom-4 right-4',
-    'top-right': 'top-20 right-4',
-    'bottom-left': 'bottom-4 left-4',
+  // Google Meet / Zoom style auto-adaptive grid layout
+  // Ensures video tiles stretch/shrink to fit 100% of the available container without overflow scrolling
+  const getGridClasses = (count: number) => {
+    switch (count) {
+      case 1:
+        return 'grid grid-cols-1 grid-rows-1 place-items-center w-full h-full max-w-md max-h-full mx-auto';
+      case 2:
+        return 'grid grid-cols-2 grid-rows-1 gap-2 place-items-center w-full h-full max-w-2xl mx-auto';
+      case 3:
+        return 'grid grid-cols-3 grid-rows-1 gap-1.5 sm:gap-2 place-items-center w-full h-full max-w-3xl mx-auto';
+      case 4:
+        return 'grid grid-cols-2 grid-rows-2 gap-1.5 sm:gap-2 place-items-center w-full h-full max-w-2xl mx-auto';
+      case 5:
+      case 6:
+        return 'grid grid-cols-3 grid-rows-2 gap-1.5 sm:gap-2 place-items-center w-full h-full max-w-3xl mx-auto';
+      default:
+        return 'grid grid-cols-3 auto-rows-fr gap-2 place-items-center w-full h-full max-w-3xl mx-auto overflow-y-auto';
+    }
   };
 
   return (
     <>
-      {/* 1. Minimized Pill Badge */}
+      {/* 1. Minimized Pill Badge (High Z-Index, Accessible Anytime) */}
       {isMinimized && (
         <div
           id="video-call-minimized-dock"
-          className={`fixed ${dockPositionClasses[dockPosition]} z-40 bg-[#0C101E]/90 backdrop-blur-xl border border-purple-500/40 rounded-full px-3.5 py-2 shadow-[0_8px_32px_rgba(0,0,0,0.6)] flex items-center gap-3 animate-in fade-in zoom-in-95 duration-150`}
+          className="fixed bottom-4 right-4 z-[80] bg-[#0A0D1A]/95 backdrop-blur-2xl border border-purple-500/40 rounded-full px-3.5 py-2 shadow-[0_12px_40px_rgba(0,0,0,0.8)] flex items-center gap-2.5 animate-in fade-in zoom-in-95 duration-150"
         >
           <div className="flex items-center gap-2">
             <span className="relative flex h-2.5 w-2.5">
@@ -115,34 +125,41 @@ export const VideoCallOverlay: React.FC<VideoCallOverlayProps> = ({
             </span>
             <span className="text-xs font-bold text-white flex items-center gap-1">
               <Radio className="w-3.5 h-3.5 text-emerald-400 animate-pulse" />
-              Live Call ({Object.keys(peers).length + 1})
+              <span>Call ({totalInCall})</span>
             </span>
           </div>
 
-          <div className="flex items-center gap-1.5 border-l border-white/10 pl-2">
+          <div className="flex items-center gap-1 border-l border-white/10 pl-2">
+            {/* Quick Mic toggle */}
             <button
               onClick={onToggleAudio}
-              className={`p-1.5 rounded-full text-xs cursor-pointer ${
-                isAudioMuted ? 'bg-red-950 text-red-400 border border-red-500/30' : 'bg-[#181F36] text-white hover:bg-[#222B4A]'
+              className={`p-1.5 rounded-full text-xs cursor-pointer transition-colors ${
+                isAudioMuted
+                  ? 'bg-red-950 text-red-400 border border-red-500/40'
+                  : 'bg-[#182038] text-white hover:bg-[#222E50]'
               }`}
               title={isAudioMuted ? 'Unmute' : 'Mute'}
             >
               {isAudioMuted ? <MicOff className="w-3.5 h-3.5" /> : <Mic className="w-3.5 h-3.5" />}
             </button>
 
+            {/* Quick Camera toggle */}
             <button
               onClick={onToggleVideo}
-              className={`p-1.5 rounded-full text-xs cursor-pointer ${
-                isVideoOff ? 'bg-zinc-900 text-zinc-400' : 'bg-[#181F36] text-white hover:bg-[#222B4A]'
+              className={`p-1.5 rounded-full text-xs cursor-pointer transition-colors ${
+                isVideoOff
+                  ? 'bg-zinc-900 text-zinc-400'
+                  : 'bg-[#182038] text-white hover:bg-[#222E50]'
               }`}
               title={isVideoOff ? 'Turn Camera On' : 'Turn Camera Off'}
             >
-              {isVideoOff ? <VideoOff className="w-3.5 h-3.5" /> : <Video className="w-3.5 h-3.5" />}
+              {isVideoOff ? <VideoOff className="w-3.5 h-3.5" /> : <Video className="w-3.5 h-3.5 text-purple-400" />}
             </button>
 
+            {/* Expand Call View */}
             <button
               onClick={() => setIsMinimized(false)}
-              className="p-1.5 rounded-full bg-purple-600 hover:bg-purple-500 text-white cursor-pointer"
+              className="p-1.5 rounded-full bg-purple-600 hover:bg-purple-500 text-white cursor-pointer transition-colors"
               title="Expand Call View"
             >
               <Maximize2 className="w-3.5 h-3.5" />
@@ -151,127 +168,140 @@ export const VideoCallOverlay: React.FC<VideoCallOverlayProps> = ({
         </div>
       )}
 
-      {/* 2. Floating Dock / Grid / Compact Bar */}
+      {/* 2. Main Call Container */}
       {!isMinimized && (
         <div
           id="video-call-active-container"
-          className={`fixed z-40 transition-all duration-200 ${
-            callLayout === 'grid'
-              ? 'inset-x-4 top-20 bottom-20 md:inset-x-16 lg:inset-x-32 bg-[#090C17]/95 backdrop-blur-2xl border border-white/15 rounded-3xl p-4 shadow-[0_16px_48px_rgba(0,0,0,0.8)] flex flex-col'
+          className={`fixed z-[80] transition-all duration-300 flex flex-col ${
+            /* Mobile / Small Screens: Cover Top portion of the Screen (48dvh) with clear view */
+            'inset-x-0 top-0 h-[48dvh] max-h-[50dvh] sm:h-auto sm:max-h-[85vh] ' +
+            (callLayout === 'grid'
+              ? 'sm:inset-x-6 sm:top-16 sm:bottom-16 sm:max-w-5xl sm:mx-auto bg-[#070A14]/98 backdrop-blur-2xl border border-white/15 sm:rounded-3xl shadow-[0_20px_60px_rgba(0,0,0,0.9)]'
               : callLayout === 'compact-bar'
-              ? 'top-16 inset-x-4 max-w-4xl mx-auto bg-[#0A0D1A]/95 backdrop-blur-xl border border-white/15 rounded-2xl p-2.5 shadow-2xl flex flex-col'
-              : `${dockPositionClasses[dockPosition]} w-[calc(100vw-2rem)] max-w-sm sm:w-96 max-h-[85vh] bg-[#0A0E1C]/95 backdrop-blur-2xl border border-purple-500/30 rounded-2xl shadow-[0_12px_40px_rgba(0,0,0,0.7)] flex flex-col`
+              ? 'sm:top-16 sm:inset-x-4 sm:max-w-4xl sm:mx-auto bg-[#080B16]/95 backdrop-blur-xl border border-white/15 sm:rounded-2xl shadow-2xl'
+              : 'sm:bottom-4 sm:right-4 sm:top-auto sm:inset-x-auto sm:w-[380px] lg:w-[440px] bg-[#070A15]/95 backdrop-blur-2xl border border-purple-500/30 sm:rounded-2xl shadow-[0_16px_50px_rgba(0,0,0,0.85)]')
           }`}
         >
           {/* Header Bar */}
-          <div className="flex items-center justify-between px-3 py-2 border-b border-white/10 select-none">
+          <div className="flex items-center justify-between px-3 py-2 sm:px-4 sm:py-2.5 border-b border-white/10 select-none bg-[#05070E]/80 sm:rounded-t-2xl flex-shrink-0">
             <div className="flex items-center gap-2">
               <span className="relative flex h-2 w-2">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
               </span>
-              <h4 className="text-xs font-bold text-white tracking-wide flex items-center gap-1.5">
+              <h4 className="text-xs sm:text-sm font-bold text-white tracking-wide flex items-center gap-1.5 font-display">
                 <span>Battle Voice & Video</span>
-                <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-purple-900/60 border border-purple-400/30 text-purple-300">
-                  {Object.keys(peers).length + 1} connected
+                <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-purple-900/70 border border-purple-400/40 text-purple-300 font-mono">
+                  {totalInCall} {totalInCall === 1 ? 'player' : 'players'}
                 </span>
               </h4>
             </div>
 
-            {/* Layout switchers and minimize */}
+            {/* Layout controls & minimize button */}
             <div className="flex items-center gap-1">
               <button
-                onClick={() => setCallLayout(callLayout === 'floating-pip' ? 'compact-bar' : callLayout === 'compact-bar' ? 'grid' : 'floating-pip')}
-                className="p-1 rounded-lg text-zinc-400 hover:text-white hover:bg-white/10 cursor-pointer"
+                onClick={() =>
+                  setCallLayout(
+                    callLayout === 'floating-pip'
+                      ? 'compact-bar'
+                      : callLayout === 'compact-bar'
+                      ? 'grid'
+                      : 'floating-pip'
+                  )
+                }
+                className="hidden sm:inline-flex p-1.5 rounded-lg text-zinc-400 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
                 title={`Layout: ${callLayout}`}
               >
-                {callLayout === 'floating-pip' ? <Layers className="w-3.5 h-3.5" /> : callLayout === 'compact-bar' ? <LayoutGrid className="w-3.5 h-3.5" /> : <Grid className="w-3.5 h-3.5" />}
+                {callLayout === 'floating-pip' ? (
+                  <Layers className="w-3.5 h-3.5" />
+                ) : callLayout === 'compact-bar' ? (
+                  <LayoutGrid className="w-3.5 h-3.5" />
+                ) : (
+                  <Grid className="w-3.5 h-3.5" />
+                )}
               </button>
 
               <button
                 onClick={() => setIsMinimized(true)}
-                className="p-1 rounded-lg text-zinc-400 hover:text-white hover:bg-white/10 cursor-pointer"
-                title="Minimize Call"
+                className="p-1.5 rounded-lg text-zinc-400 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
+                title="Minimize Call View"
               >
-                <Minimize2 className="w-3.5 h-3.5" />
+                <Minimize2 className="w-4 h-4" />
               </button>
             </div>
           </div>
 
-          {/* Video Streams Canvas */}
-          <div
-            className={`p-2.5 overflow-y-auto ${
-              callLayout === 'grid'
-                ? 'flex-1 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 items-center justify-center'
-                : callLayout === 'compact-bar'
-                ? 'flex items-center gap-2 overflow-x-auto py-1 scrollbar-none'
-                : 'grid grid-cols-1 gap-2 max-h-[380px]'
-            }`}
-          >
-            {/* Local Video Tile */}
-            <VideoTile
-              player={me}
-              stream={localStream}
-              isLocal={true}
-              isAudioMuted={isAudioMuted}
-              isVideoOff={isVideoOff}
-              isScreenSharing={isScreenSharing}
-              isSpeaking={isSpeaking}
-              isMirrorMode={isMirrorMode}
-              onToggleMirror={onToggleMirror}
-              compact={callLayout === 'compact-bar'}
-            />
-
-            {/* Remote Peer Video Tiles */}
-            {otherPlayers.map((player) => {
-              const peerInfo = peers[player.id];
-              return (
+          {/* Video Streams Canvas (Adaptive Google Meet style grid without unnecessary scrolling) */}
+          <div className="flex-1 min-h-0 w-full h-full p-2 sm:p-3 overflow-hidden flex items-center justify-center">
+            <div className={`w-full h-full min-h-0 ${getGridClasses(totalInCall)}`}>
+              {/* Local Player Video Tile */}
+              <div className="w-full h-full min-h-0 min-w-0 flex items-center justify-center flex-1">
                 <VideoTile
-                  key={player.id}
-                  player={player}
-                  stream={peerInfo?.stream || null}
-                  isLocal={false}
-                  isAudioMuted={peerInfo ? !peerInfo.isAudioOn : true}
-                  isVideoOff={peerInfo ? !peerInfo.isVideoOn : true}
-                  isScreenSharing={peerInfo?.isScreenSharing || false}
-                  isSpeaking={peerInfo?.isSpeaking || false}
-                  compact={callLayout === 'compact-bar'}
+                  player={me}
+                  stream={localStream}
+                  isLocal={true}
+                  isAudioMuted={isAudioMuted}
+                  isVideoOff={isVideoOff}
+                  isScreenSharing={isScreenSharing}
+                  isSpeaking={isSpeaking}
+                  isMirrorMode={isMirrorMode}
+                  onToggleMirror={onToggleMirror}
+                  aspect="auto"
                 />
-              );
-            })}
+              </div>
+
+              {/* Remote Peer Video Tiles */}
+              {activeRemotePlayers.map((player) => {
+                const peerInfo = peers[player.id];
+                return (
+                  <div key={player.id} className="w-full h-full min-h-0 min-w-0 flex items-center justify-center flex-1">
+                    <VideoTile
+                      player={player}
+                      stream={peerInfo?.stream || null}
+                      isLocal={false}
+                      isAudioMuted={peerInfo ? !peerInfo.isAudioOn : true}
+                      isVideoOff={peerInfo ? !peerInfo.isVideoOn : true}
+                      isScreenSharing={peerInfo?.isScreenSharing || false}
+                      isSpeaking={peerInfo?.isSpeaking || false}
+                      aspect="auto"
+                    />
+                  </div>
+                );
+              })}
+            </div>
           </div>
 
           {/* Permission Error Banner if any */}
           {permissionError && (
-            <div className="mx-2.5 mb-2 p-2 rounded-xl bg-red-950/80 border border-red-500/40 text-[11px] text-red-200 flex items-start gap-1.5">
+            <div className="mx-2.5 mb-1.5 p-2 rounded-xl bg-red-950/90 border border-red-500/40 text-[11px] text-red-200 flex items-start gap-1.5">
               <Info className="w-3.5 h-3.5 text-red-400 shrink-0 mt-0.5" />
               <div className="flex-1">{permissionError}</div>
             </div>
           )}
 
-          {/* Interactive Floating Control Bar */}
-          <div className="p-2.5 border-t border-white/10 bg-[#070A14] flex items-center justify-between rounded-b-2xl">
-            <div className="flex items-center gap-1.5">
+          {/* Interactive Control Action Bar */}
+          <div className="p-2 sm:p-3 border-t border-white/10 bg-[#05070E]/95 flex items-center justify-between sm:rounded-b-2xl flex-shrink-0">
+            <div className="flex items-center gap-1.5 sm:gap-2">
               {/* Mic Toggle */}
               <button
                 id="call-btn-toggle-mic"
                 onClick={onToggleAudio}
-                className={`p-2 rounded-xl text-xs font-medium flex items-center gap-1.5 transition-all cursor-pointer ${
+                className={`p-2 sm:px-3 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer ${
                   isAudioMuted
                     ? 'bg-red-500/20 text-red-400 border border-red-500/40 hover:bg-red-500/30'
                     : 'bg-[#151C33] text-white border border-white/10 hover:bg-[#1C2544]'
                 }`}
-                title={isAudioMuted ? 'Unmute Mic (M)' : 'Mute Mic (M)'}
+                title={isAudioMuted ? 'Unmute Mic' : 'Mute Mic'}
               >
                 {isAudioMuted ? <MicOff className="w-4 h-4 text-red-400" /> : <Mic className="w-4 h-4 text-emerald-400" />}
-                <span className="hidden sm:inline text-[11px]">{isAudioMuted ? 'Muted' : 'Mute'}</span>
+                <span className="text-[11px] sm:text-xs">{isAudioMuted ? 'Muted' : 'Mic On'}</span>
               </button>
 
               {/* Video Camera Toggle */}
               <button
                 id="call-btn-toggle-camera"
                 onClick={onToggleVideo}
-                className={`p-2 rounded-xl text-xs font-medium flex items-center gap-1.5 transition-all cursor-pointer ${
+                className={`p-2 sm:px-3 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer ${
                   isVideoOff
                     ? 'bg-zinc-800 text-zinc-400 border border-white/10 hover:bg-zinc-700'
                     : 'bg-[#151C33] text-white border border-white/10 hover:bg-[#1C2544]'
@@ -279,14 +309,14 @@ export const VideoCallOverlay: React.FC<VideoCallOverlayProps> = ({
                 title={isVideoOff ? 'Turn Camera On' : 'Turn Camera Off'}
               >
                 {isVideoOff ? <VideoOff className="w-4 h-4 text-zinc-400" /> : <Video className="w-4 h-4 text-purple-400" />}
-                <span className="hidden sm:inline text-[11px]">{isVideoOff ? 'Cam Off' : 'Camera'}</span>
+                <span className="text-[11px] sm:text-xs">{isVideoOff ? 'Cam Off' : 'Camera'}</span>
               </button>
 
-              {/* Screen Share Toggle */}
+              {/* Screen Share Toggle (visible on tablets & desktops) */}
               <button
                 id="call-btn-toggle-screen"
                 onClick={onToggleScreenShare}
-                className={`p-2 rounded-xl text-xs font-medium flex items-center gap-1.5 transition-all cursor-pointer ${
+                className={`hidden sm:flex p-2 sm:px-3 rounded-xl text-xs font-semibold items-center gap-1.5 transition-all cursor-pointer ${
                   isScreenSharing
                     ? 'bg-emerald-600 text-white border border-emerald-400 shadow-md'
                     : 'bg-[#151C33] text-zinc-300 border border-white/10 hover:bg-[#1C2544] hover:text-white'
@@ -294,15 +324,15 @@ export const VideoCallOverlay: React.FC<VideoCallOverlayProps> = ({
                 title="Share Screen"
               >
                 <Monitor className="w-4 h-4" />
-                <span className="hidden sm:inline text-[11px]">{isScreenSharing ? 'Sharing' : 'Share'}</span>
+                <span className="text-[11px] sm:text-xs">{isScreenSharing ? 'Sharing' : 'Share'}</span>
               </button>
             </div>
 
-            {/* End / Leave Call Button */}
+            {/* Leave Call Button */}
             <button
               id="call-btn-leave"
               onClick={onLeaveCall}
-              className="p-2 px-3 rounded-xl bg-gradient-to-r from-red-600 to-rose-700 hover:from-red-500 hover:to-rose-600 text-white font-bold text-xs flex items-center gap-1.5 shadow-lg shadow-red-950/50 cursor-pointer active:scale-95 transition-transform"
+              className="py-2 px-3 sm:px-4 rounded-xl bg-gradient-to-r from-red-600 to-rose-700 hover:from-red-500 hover:to-rose-600 text-white font-bold text-xs flex items-center gap-1.5 shadow-lg shadow-red-950/50 cursor-pointer active:scale-95 transition-transform"
               title="Leave Video Call"
             >
               <PhoneOff className="w-4 h-4" />

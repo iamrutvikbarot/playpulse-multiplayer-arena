@@ -238,12 +238,31 @@ export function useMultiplayer(): MultiplayerHook {
       }
     }, 10000);
 
+    const handleBeforeUnload = () => {
+      if (room && socketRef.current && socketRef.current.readyState === WebSocket.OPEN) {
+        try {
+          socketRef.current.send(
+            JSON.stringify({
+              type: 'ROOM_LEAVE',
+              payload: { roomCode: room.code, playerId: currentUserId },
+              senderId: currentUserId,
+            })
+          );
+        } catch (e) {}
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    window.addEventListener('unload', handleBeforeUnload);
+
     return () => {
       clearInterval(pingInterval);
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+      window.removeEventListener('unload', handleBeforeUnload);
       if (reconnectTimeoutRef.current) clearTimeout(reconnectTimeoutRef.current);
       if (socketRef.current) socketRef.current.close();
     };
-  }, [connectSocket]);
+  }, [connectSocket, room, currentUserId]);
 
   const createRoom = useCallback(
     (playerName: string, characterId: string, initialGame: GameId = 'tic-tac-toe', settings?: Partial<RoomSettings>) => {
