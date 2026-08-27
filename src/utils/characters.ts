@@ -121,10 +121,10 @@ export const CHARACTERS: Character[] = [
     faction: 'Gandhara & Kaurava Mastermind',
     weapon: 'Enchanted Ivory Dice (Pasha) & Dark Illusions',
     origin: 'Gandhara Kingdom',
-    primaryColor: '#A855F7', // Mystic Poison Violet
-    secondaryColor: '#4C1D95', // Shadow Obsidian
-    accentBg: 'from-purple-600/35 via-violet-950/40 to-transparent',
-    glowColor: 'rgba(168, 85, 247, 0.65)',
+    primaryColor: '#9333EA', // Mystic Poison Violet
+    secondaryColor: '#581C87', // Dark Shadow Obsidian
+    accentBg: 'from-purple-700/40 via-fuchsia-950/40 to-transparent',
+    glowColor: 'rgba(147, 51, 234, 0.75)',
     description:
       'Cunning King of Gandhara controlling magical ivory dice (Pasha) enveloped in swirling dark occult mist, outmaneuvering foes through unmatched strategy.',
     iconName: 'Dices',
@@ -137,10 +137,10 @@ export const CHARACTERS: Character[] = [
     faction: 'Guru of Pandavas & Kauravas',
     weapon: 'Brahmashira Astra & Master Divine Bow',
     origin: 'Bharadwaja Ashram / Hastinapur',
-    primaryColor: '#8B5CF6', // Vedic Amethyst & Wisdom
-    secondaryColor: '#F59E0B', // Holy Rudraksha Amber
-    accentBg: 'from-violet-600/35 via-amber-600/20 to-transparent',
-    glowColor: 'rgba(139, 92, 246, 0.6)',
+    primaryColor: '#4F46E5', // Vedic Royal Indigo & Sacred Divyastra
+    secondaryColor: '#D97706', // Holy Rudraksha Amber
+    accentBg: 'from-indigo-600/35 via-amber-600/20 to-transparent',
+    glowColor: 'rgba(79, 70, 229, 0.7)',
     description:
       'Legendary master teacher of both Pandavas and Kauravas, bearing sage-warrior rudraksha, holding the floating glowing Brahmashira Astra orb.',
     iconName: 'Sparkles',

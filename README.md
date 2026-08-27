@@ -1,9 +1,10 @@
 # 🎮 PlayPulse Multiplayer Arena
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Status-Live%20Production-10B981?style=for-the-badge&logo=vercel&logoColor=white" alt="Live Status" />
+  <img src="https://img.shields.io/badge/Status-Live%20Production-10B981?style=for-the-badge&logo=render&logoColor=white" alt="Render Live Status" />
   <img src="https://img.shields.io/badge/Multiplayer-Real--Time%20WebSockets-8B5CF6?style=for-the-badge&logo=socketdotio&logoColor=white" alt="WebSockets" />
-  <img src="https://img.shields.io/badge/Frontend-React%2019%20%2B%20Tailwind%20CSS-38BDF8?style=for-the-badge&logo=react&logoColor=white" alt="React" />
+  <img src="https://img.shields.io/badge/Voice%20%26%20Video-WebRTC%20P2P-38BDF8?style=for-the-badge&logo=webrtc&logoColor=white" alt="WebRTC" />
+  <img src="https://img.shields.io/badge/Frontend-React%2019%20%2B%20Tailwind%20CSS-06B6D4?style=for-the-badge&logo=react&logoColor=white" alt="React" />
   <img src="https://img.shields.io/badge/Backend-Node.js%20%2B%20Express%20%2B%20ws-F59E0B?style=for-the-badge&logo=nodedotjs&logoColor=white" alt="Node" />
   <img src="https://img.shields.io/badge/Made%20By-Rutvik%20Barot-EC4899?style=for-the-badge" alt="Author" />
 </p>
@@ -12,22 +13,24 @@
 
 ## 🌐 Live Hosted Application
 
-> ### 🚀 **Play Live Now:** [https://playpulse-multiplayer-arena.ai.studio/](https://playpulse-multiplayer-arena.ai.studio/)
+> ### 🚀 **Play Live Now:** [https://playpulse-multiplayer-arena.onrender.com/](https://playpulse-multiplayer-arena.onrender.com/)
 
-Experience zero-latency, server-authoritative multiplayer browser gaming with your friends instantly using 6-character room codes or dynamic bot matchmaking.
+Experience zero-latency, server-authoritative multiplayer browser gaming with your friends instantly using 6-character room codes, live WebRTC video/voice calls, and automated bot matchmaking.
 
 ---
 
 ## ⚡ Overview
 
-**PlayPulse Multiplayer Arena** is a full-stack real-time multiplayer gaming hub engineered with a server-authoritative state engine, low-latency WebSocket synchronization, responsive audio synthesis, and Marvel superhero avatars.
+**PlayPulse Multiplayer Arena** is a full-stack real-time multiplayer gaming hub engineered with a server-authoritative state engine, low-latency WebSocket synchronization, peer-to-peer WebRTC video/audio calls, responsive audio synthesis, and authentic Mahabharat legendary warrior avatars.
 
 ### ✨ Key Features
-- **Instant Room Codes**: Create private lobbies with custom max player limits or join via 6-digit alphanumeric room codes.
+- **Instant Room Codes & QR Invite**: Create private lobbies with custom max player limits or join via 6-digit alphanumeric room codes and direct shareable URLs.
+- **WebRTC P2P Voice & Video Calls**: Integrated real-time video feeds with speaker indicators, mute/camera toggles, screen sharing, mobile-optimized autoplay, and STUN NAT traversal.
+- **Mahabharat Legendary Characters**: 10 hand-crafted vector warrior avatars (Shri Krishna, Arjuna, Karna, Bhishma Pitamah, Duryodhana, Draupadi, Bheema, Shakuni, Guru Dronacharya, Ashwatthama) with dynamic aura glow and 3D interactive physics.
+- **In-Game Chat & Live Reactions**: Send real-time messages and trigger floating emoji particle bursts across the entire arena canvas.
 - **AI Bot Matchmaking**: Fill empty lobby slots instantly with automated intelligent bots for solo and practice sessions.
-- **Marvel Superhero Roster**: 10 hand-crafted vector hero avatars (Iron Man, Spider-Man, Captain America, Thor, Hulk, Black Panther, Doctor Strange, Deadpool, Wolverine, Scarlet Witch).
 - **Sound Effects Engine**: Web Audio API synthesized dynamic sound effects for dice rolls, moves, card drops, wins, and countdowns.
-- **Mobile & Desktop Responsive**: Responsive design with touch controls and keyboard navigation.
+- **Mobile & Desktop Responsive**: Cross-platform adaptive design with full touch controls and mobile viewport optimization.
 
 ---
 
@@ -43,72 +46,68 @@ Experience zero-latency, server-authoritative multiplayer browser gaming with yo
 
 ---
 
-## 🦸 Marvel Character Roster
+## ⚔️ Mahabharat Legendary Character Roster
 
-Play as your favorite superhero, each styled with unique color schemes and custom vector iconography:
+Play as your favorite legendary warrior or deity, each styled with unique color schemes, divine weapons (Astras), and custom vector aura art:
 
-1. 🔴 **Iron Man** (*Tony Stark*) — Crimson & Gold Arc Reactor
-2. 🕷️ **Spider-Man** (*Peter Parker*) — Cobalt Blue & Web Red
-3. 🛡️ **Captain America** (*Steve Rogers*) — Sky Blue & Vibranium Star Shield
-4. ⚡ **Thor** (*God of Thunder*) — Asgardian Gold & Mjolnir Hammer
-5. 🟢 **Hulk** (*Bruce Banner*) — Gamma Green Power Fist
-6. 🟣 **Black Panther** (*King T'Challa*) — Wakandan Violet Kinetic Armor
-7. 👁️ **Doctor Strange** (*Stephen Strange*) — Mystic Orange Eye of Agamotto
-8. ⚔️ **Deadpool** (*Wade Wilson*) — Crimson & Stealth Dual Katanas
-9. 🐾 **Wolverine** (*Logan*) — X-Men Gold & Adamantium Claws
-10. 🔮 **Scarlet Witch** (*Wanda Maximoff*) — Chaos Magic Hex Tiara
+1. 🦚 **Shri Krishna** (*Divine Charioteer & Jagadguru*) — Celestial Sky Blue (`#38BDF8`) & Sudarshana Chakra
+2. 🏹 **Arjuna** (*Dhanurdhar Partha*) — Radiant Gold (`#EAB308`) & Gandiva Bow
+3. ☀️ **Karna** (*Danveer Suryaputra*) — Solar Saffron (`#F97316`) & Divine Kavach-Kundal
+4. 🛡️ **Bhishma Pitamah** (*Ganga Putra & Grand Patriarch*) — Silver Slate (`#E2E8F0`) & Iccha-Mrityu Boon
+5. 🩸 **Duryodhana** (*Kaurava Crown Prince*) — Blood Crimson (`#DC2626`) & Vajra Spiked Gada
+6. 🌸 **Draupadi** (*Yajnaseni & Panchali*) — Royal Lotus Magenta (`#EC4899`) & Sacred Agni Shakti
+7. 🌪️ **Bheema** (*Vrikodara & Son of Vayu*) — Emerald Titan (`#10B981`) & Seismic Spiked Mace
+8. 🎲 **Shakuni** (*Master of Cursed Dice*) — Mystic Poison Violet (`#9333EA`) & Enchanted Ivory Pasha
+9. 🔮 **Guru Dronacharya** (*Supreme Archmaster*) — Vedic Royal Indigo (`#4F46E5`) & Brahmashira Astra
+10. 💎 **Ashwatthama** (*Chiranjeevi Immortal Warrior*) — Mani Gem Cyan (`#06B6D4`) & Narayanastra
 
 ---
 
 ## 🏗️ Architecture & Real-Time Synchronization
 
 ```
-┌────────────────────────────────────────────────────────┐
-│                   PlayPulse Client                     │
-│    (React 19 / Next.js + Tailwind CSS + Web Audio)     │
-└───────────────────────────▲────────────────────────────┘
-                            │  WebSocket (Bidirectional)
-                            ▼
-┌────────────────────────────────────────────────────────┐
-│               Server-Authoritative Core                │
-│    (Node.js + Express + ws WebSocket Engine)           │
-│                                                        │
-│   ├── RoomManager (Lobby, Matchmaking, Reconnect)      │
-│   ├── TicTacToeEngine                                  │
-│   ├── RPSEngine                                        │
-│   ├── LudoEngine (15x15 Board Matrix & Captures)       │
-│   ├── CardBattleEngine (UNO Deck & Discard Mechanics)  │
-│   └── MiniRacingEngine (Track Physics & Power-ups)     │
-└────────────────────────────────────────────────────────┘
+┌────────────────────────────────────────────────────────────────────────┐
+│                          PlayPulse Client                              │
+│       (React 19 + Tailwind CSS + Web Audio + WebRTC Media Engine)      │
+└───────────────────▲────────────────────────────────▲───────────────────┘
+                    │ WebSocket (TCP)                │ WebRTC (P2P Mesh)
+                    │ Game State & Signaling         │ Video & Audio Streams
+                    ▼                                ▼
+┌────────────────────────────────────────────────────────────────────────┐
+│                      Server-Authoritative Core                         │
+│               (Node.js + Express + ws WebSocket Engine)                │
+│                                                                        │
+│   ├── RoomManager (Lobby, Matchmaking, Signaling Relay, Reconnect)     │
+│   ├── TicTacToeEngine                                                  │
+│   ├── RPSEngine                                                        │
+│   ├── LudoEngine (15x15 Board Matrix & Captures)                       │
+│   ├── CardBattleEngine (UNO Deck & Discard Mechanics)                  │
+│   └── MiniRacingEngine (Track Physics & Power-ups)                     │
+└────────────────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## 🚀 Converting to Next.js & Deploying to Vercel
+## 🚀 Deployment (Render, Cloud Run, Railway)
 
-### ⚠️ How WebSockets Work with Vercel & Next.js
+The application is bundled into a single self-contained server with static asset serving:
 
-> **Important Architecture Note:**
-> Vercel's standard hosting environment runs on **Serverless & Edge Functions**, which are stateless and terminate after each request. Persistent, stateful WebSocket TCP servers (`ws` / `socket.io`) cannot run directly inside a serverless function on Vercel.
+```json
+{
+  "scripts": {
+    "dev": "tsx server.ts",
+    "build": "vite build && esbuild server.ts --bundle --platform=node --format=cjs --packages=external --sourcemap --outfile=dist/server.cjs",
+    "start": "node dist/server.cjs"
+  }
+}
+```
 
-### 🌟 Recommended Production Strategy (Dual Architecture)
-
-To run this Next.js app on Vercel with active WebSockets:
-
-1. **Deploy Frontend on Vercel (Next.js)**:
-   - Host all React UI views, audio engines, and client controllers on Vercel.
-   - Point the WebSocket client to your hosted WebSocket server using an environment variable:
-     ```env
-     NEXT_PUBLIC_WS_URL=wss://your-backend-service.railway.app
-     ```
-
-2. **Deploy WebSocket Backend on a Persistent Node.js Host**:
-   - Host `server.ts` / `server/` on a free/low-cost persistent Node.js host:
-     - **Railway** / **Render** / **Fly.io** / **Google Cloud Run**
-   - Simply deploy the repository with start command `node dist/server.cjs` or `tsx server.ts`.
-
-3. **Or Deploy Full Next.js Container with Custom Server**:
-   - Using Next.js custom `server.js` inside a Docker container on Cloud Run / Railway allows frontend + WebSockets on the exact same port.
+### Deploying to Render
+1. Create a new **Web Service** on [Render](https://render.com/).
+2. Connect your GitHub repository.
+3. Set **Build Command**: `npm install && npm run build`
+4. Set **Start Command**: `npm start`
+5. Set environment variable `NODE_ENV=production`.
 
 ---
 
@@ -145,6 +144,7 @@ npm start
 
 ## 👨‍💻 Author & Credits
 
-Designed and developed with ❤️ and AI by **Rutvik Barot**  
+Designed and developed with ❤️ by **Rutvik Barot**  
 - **Email:** rutbarot3011@gmail.com  
-- **Live Demo:** [https://playpulse-multiplayer-arena.ai.studio/](https://playpulse-multiplayer-arena.ai.studio/)
+- **Live Demo:** [https://playpulse-multiplayer-arena.onrender.com/](https://playpulse-multiplayer-arena.onrender.com/)
+

@@ -367,13 +367,13 @@ export const CharacterAvatar: React.FC<CharacterAvatarProps> = ({
       // 8. SHAKUNI - Enchanted Ivory Dice (Pasha) with Dark Purple Occult Mist, Crooked Cap, Scheming Smirk
       case 'char_shakuni':
         return (
-          <svg viewBox="0 0 64 64" fill="none" className={`${iconSizes} drop-shadow-[0_0_18px_rgba(168,85,247,0.95)]`}>
+          <svg viewBox="0 0 64 64" fill="none" className={`${iconSizes} drop-shadow-[0_0_18px_rgba(147,51,234,0.95)]`}>
             {/* Swirling Dark Purple Occult Smoke */}
             <path d="M12 28C10 18 16 10 24 12C32 14 36 6 44 10C52 14 54 24 50 32C46 40 50 50 42 54C34 58 24 54 18 48C12 42 14 38 12 28Z" fill="#581C87" opacity="0.35" className="animate-pulse" />
 
             {/* Floating Enchanted Spiked Ivory Dice (Pasha) on Top Right */}
             <g className="animate-bounce" style={{ transformOrigin: '48px 14px' }}>
-              <rect x="42" y="8" width="12" height="12" rx="2" fill="#FAF5FF" stroke="#A855F7" strokeWidth="1.2" />
+              <rect x="42" y="8" width="12" height="12" rx="2" fill="#FAF5FF" stroke="#9333EA" strokeWidth="1.2" />
               {/* Glowing Purple Pips */}
               <circle cx="45" cy="11" r="1.2" fill="#7E22CE" />
               <circle cx="51" cy="11" r="1.2" fill="#7E22CE" />
@@ -383,7 +383,7 @@ export const CharacterAvatar: React.FC<CharacterAvatarProps> = ({
             </g>
 
             {/* Head Contour */}
-            <path d="M20 24C20 14 26 8 33 8C40 8 45 14 45 24V36C45 44 40 51 33 55C26 51 20 44 20 36V24Z" fill="#3B0764" stroke="#6B21A8" strokeWidth="1.2" />
+            <path d="M20 24C20 14 26 8 33 8C40 8 45 14 45 24V36C45 44 40 51 33 55C26 51 20 44 20 36V24Z" fill="#3B0764" stroke="#7E22CE" strokeWidth="1.2" />
 
             {/* Crooked Gandhara Royal Turban with Jewel */}
             <path d="M17 18C19 8 30 5 41 8C46 11 47 17 44 22L18 20L17 18Z" fill="#6B21A8" stroke="#F59E0B" strokeWidth="0.8" />
@@ -402,7 +402,7 @@ export const CharacterAvatar: React.FC<CharacterAvatarProps> = ({
             <path d="M26 38C29 40 35 41 39 36" stroke="#E9D5FF" strokeWidth="2" strokeLinecap="round" fill="none" />
 
             {/* Dark Obsidian Amulet Necklace */}
-            <path d="M22 46C27 52 37 52 42 46" stroke="#A855F7" strokeWidth="2" strokeLinecap="round" />
+            <path d="M22 46C27 52 37 52 42 46" stroke="#9333EA" strokeWidth="2" strokeLinecap="round" />
             <polygon points="32,48 35,53 32,56 29,53" fill="#18181B" stroke="#C084FC" strokeWidth="1" />
           </svg>
         );
@@ -410,23 +410,23 @@ export const CharacterAvatar: React.FC<CharacterAvatarProps> = ({
       // 9. DRONACHARYA - Sage-Guru Beard, Ascetic Topknot with Rudraksha, Glowing Brahmashira Astra Orb
       case 'char_drona':
         return (
-          <svg viewBox="0 0 64 64" fill="none" className={`${iconSizes} drop-shadow-[0_0_18px_rgba(139,92,246,0.95)]`}>
+          <svg viewBox="0 0 64 64" fill="none" className={`${iconSizes} drop-shadow-[0_0_18px_rgba(79,70,229,0.95)]`}>
             {/* Brahmashira Astra Glowing Energy Orb in Hand */}
             <g className="animate-pulse" style={{ transformOrigin: '48px 44px' }}>
-              <circle cx="48" cy="44" r="8" fill="#8B5CF6" fillOpacity="0.4" stroke="#C084FC" strokeWidth="1.5" />
+              <circle cx="48" cy="44" r="8" fill="#4F46E5" fillOpacity="0.45" stroke="#818CF8" strokeWidth="1.5" />
               <circle cx="48" cy="44" r="4" fill="#FEF08A" />
               <line x1="48" y1="34" x2="48" y2="54" stroke="#FDE047" strokeWidth="1" strokeDasharray="1 1" />
               <line x1="38" y1="44" x2="58" y2="44" stroke="#FDE047" strokeWidth="1" strokeDasharray="1 1" />
             </g>
 
             {/* Ascetic Yogic Topknot (Jata) with Holy Rudraksha Beads */}
-            <ellipse cx="32" cy="7" rx="6" ry="4" fill="#4B5563" />
+            <ellipse cx="32" cy="7" rx="6" ry="4" fill="#312E81" stroke="#D97706" strokeWidth="0.8" />
             <circle cx="28" cy="7" r="1.5" fill="#D97706" />
             <circle cx="32" cy="5" r="1.5" fill="#D97706" />
             <circle cx="36" cy="7" r="1.5" fill="#D97706" />
 
             {/* Wise Face Contour */}
-            <path d="M21 18C21 11 26 8 32 8C38 8 43 11 43 18V30C43 36 38 40 32 42C26 40 21 36 21 30V18Z" fill="#4C1D95" stroke="#7C3AED" strokeWidth="1.2" />
+            <path d="M21 18C21 11 26 8 32 8C38 8 43 11 43 18V30C43 36 38 40 32 42C26 40 21 36 21 30V18Z" fill="#312E81" stroke="#4F46E5" strokeWidth="1.2" />
 
             {/* Sacred Chandan Tripundra Tilak */}
             <line x1="28" y1="14" x2="36" y2="14" stroke="#FEF08A" strokeWidth="1" />
@@ -434,17 +434,18 @@ export const CharacterAvatar: React.FC<CharacterAvatarProps> = ({
             <circle cx="32" cy="15" r="1" fill="#DC2626" />
 
             {/* Calm, Masterful Guru Eyes */}
-            <line x1="25" y1="22" x2="29" y2="22" stroke="#E9D5FF" strokeWidth="1.5" strokeLinecap="round" />
-            <line x1="39" y1="22" x2="35" y2="22" stroke="#E9D5FF" strokeWidth="1.5" strokeLinecap="round" />
-            <circle cx="27" cy="24" r="1.3" fill="#FAF5FF" />
-            <circle cx="37" cy="24" r="1.3" fill="#FAF5FF" />
+            <line x1="25" y1="22" x2="29" y2="22" stroke="#C7D2FE" strokeWidth="1.5" strokeLinecap="round" />
+            <line x1="39" y1="22" x2="35" y2="22" stroke="#C7D2FE" strokeWidth="1.5" strokeLinecap="round" />
+            <circle cx="27" cy="24" r="1.3" fill="#EEF2FF" />
+            <circle cx="37" cy="24" r="1.3" fill="#EEF2FF" />
 
             {/* Distinguished Grey-White Sage-Guru Beard */}
-            <path d="M22 28C22 28 26 32 32 32C38 32 42 28 42 28C44 36 41 52 32 56C23 52 20 36 22 28Z" fill="#9CA3AF" stroke="#D1D5DB" strokeWidth="1" />
-            <path d="M28 32C30 42 34 42 36 32" stroke="#E5E7EB" strokeWidth="1.2" />
+            <path d="M22 28C22 28 26 32 32 32C38 32 42 28 42 28C44 36 41 52 32 56C23 52 20 36 22 28Z" fill="#E2E8F0" stroke="#CBD5E1" strokeWidth="1" />
+            <path d="M28 32C30 42 34 42 36 32" stroke="#94A3B8" strokeWidth="1.2" />
 
-            {/* White Sacred Thread (Janeu) */}
-            <line x1="20" y1="42" x2="38" y2="58" stroke="#F8FAFC" strokeWidth="1.5" strokeLinecap="round" />
+            {/* Holy Saffron-Gold Sacred Thread (Janeu) & Rudraksha Mala */}
+            <line x1="20" y1="42" x2="38" y2="58" stroke="#F59E0B" strokeWidth="1.5" strokeLinecap="round" />
+            <circle cx="28" cy="49" r="1.4" fill="#D97706" />
           </svg>
         );
 

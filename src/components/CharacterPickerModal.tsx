@@ -1,4 +1,4 @@
-import { Check, Dices, Search, Shield, Sparkles, Sword, User, X } from 'lucide-react';
+import { Check, Dices, Shield, Sparkles, Sword, X } from 'lucide-react';
 import React, { useState } from 'react';
 import { sound } from '../utils/audio';
 import { CHARACTERS, getCharacterById, getRandomCharacter } from '../utils/characters';
@@ -17,29 +17,20 @@ export const CharacterPickerModal: React.FC<CharacterPickerModalProps> = ({
   onSelect,
   onClose,
 }) => {
-  const [searchQuery, setSearchQuery] = useState('');
   const [previewId, setPreviewId] = useState<string>(selectedCharacterId);
+  const [hoveredCharId, setHoveredCharId] = useState<string | null>(null);
   const [mobileTab, setMobileTab] = useState<'grid' | 'inspect'>('grid');
 
   if (!isOpen) return null;
 
   const previewChar = getCharacterById(previewId || selectedCharacterId);
-  const filteredChars = CHARACTERS.filter((c) => {
-    if (!searchQuery.trim()) return true;
-    const q = searchQuery.toLowerCase();
-    return (
-      c.name.toLowerCase().includes(q) ||
-      c.title.toLowerCase().includes(q) ||
-      c.weapon.toLowerCase().includes(q) ||
-      c.faction.toLowerCase().includes(q)
-    );
-  });
 
   const handleRandomPick = () => {
     sound.playClick();
     const randomChar = getRandomCharacter();
     setPreviewId(randomChar.id);
     onSelect(randomChar.id);
+    onClose();
   };
 
   const handleSelectAndClose = (charId: string) => {
@@ -56,12 +47,12 @@ export const CharacterPickerModal: React.FC<CharacterPickerModalProps> = ({
       >
         {/* Ambient Top Glow */}
         <div
-          className="absolute top-0 left-1/2 -translate-x-1/2 w-3/4 h-24 blur-3xl pointer-events-none opacity-30"
+          className="absolute top-0 left-1/2 -translate-x-1/2 w-3/4 h-24 blur-3xl pointer-events-none opacity-30 transition-all duration-300"
           style={{ background: previewChar.glowColor }}
         />
 
         {/* Modal Header */}
-        <div className="relative z-10 flex items-center justify-between px-3.5 sm:px-6 py-2.5 sm:py-3.5 border-b border-[#161D30] bg-[#0E1222] flex-shrink-0">
+        <div className="relative z-10 flex items-center justify-between px-3.5 sm:px-6 py-3 sm:py-3.5 border-b border-[#161D30] bg-[#0E1222] flex-shrink-0">
           <div className="flex items-center gap-2 sm:gap-3 min-w-0">
             <div className="p-1.5 sm:p-2 rounded-xl bg-amber-500/15 border border-amber-500/30 text-amber-400 flex-shrink-0">
               <Sparkles className="w-4 h-4 sm:w-5 sm:h-5" />
@@ -81,7 +72,7 @@ export const CharacterPickerModal: React.FC<CharacterPickerModalProps> = ({
             <button
               onClick={handleRandomPick}
               className="px-2.5 sm:px-3 py-1.5 rounded-xl bg-[#182038] hover:bg-purple-600/30 border border-[#273252] hover:border-purple-500/50 text-amber-300 hover:text-white text-[11px] sm:text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer shadow-md"
-              title="Pick a Random Character"
+              title="Pick a Random Character & Close"
             >
               <Dices className="w-3.5 h-3.5 text-amber-400 animate-spin" />
               <span className="hidden xs:inline">Random</span>
@@ -107,7 +98,7 @@ export const CharacterPickerModal: React.FC<CharacterPickerModalProps> = ({
                 : 'text-zinc-400 hover:text-white'
             }`}
           >
-            <span>Roster Grid ({filteredChars.length})</span>
+            <span>Roster Grid ({CHARACTERS.length})</span>
           </button>
           <button
             onClick={() => setMobileTab('inspect')}
@@ -119,24 +110,6 @@ export const CharacterPickerModal: React.FC<CharacterPickerModalProps> = ({
           >
             <span className="truncate max-w-[150px]">Inspect ({previewChar.name})</span>
           </button>
-        </div>
-
-        {/* Search & Overview Sub-bar */}
-        <div className="px-3.5 sm:px-6 py-2 bg-[#090C17] border-b border-[#161D30] flex items-center justify-between gap-2 flex-shrink-0">
-          <div className="relative flex-1 max-w-xs">
-            <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-zinc-400 pointer-events-none" />
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search by name, weapon, faction..."
-              className="w-full pl-8 pr-2.5 py-1 text-xs rounded-lg bg-[#12172A] border border-[#202A44] text-white placeholder-zinc-500 focus:outline-none focus:border-amber-400"
-            />
-          </div>
-
-          <span className="hidden sm:inline text-[11px] text-zinc-400 font-mono">
-            {filteredChars.length} / {CHARACTERS.length} Characters
-          </span>
         </div>
 
         {/* Main Content Body */}
@@ -179,7 +152,10 @@ export const CharacterPickerModal: React.FC<CharacterPickerModalProps> = ({
                 <h3 className="font-display font-black text-base sm:text-lg text-white mt-2 text-center">
                   {previewChar.name}
                 </h3>
-                <p className="text-xs text-amber-300 font-bold text-center mt-0.5">
+                <p
+                  className="text-xs font-bold text-center mt-0.5"
+                  style={{ color: previewChar.primaryColor }}
+                >
                   {previewChar.title}
                 </p>
               </div>
@@ -194,7 +170,11 @@ export const CharacterPickerModal: React.FC<CharacterPickerModalProps> = ({
                     <Sword className="w-3.5 h-3.5 text-amber-400 flex-shrink-0" />
                     Weapon / Astra:
                   </span>
-                  <span className="font-bold text-amber-300 break-words" title={previewChar.weapon}>
+                  <span
+                    className="font-bold break-words"
+                    style={{ color: previewChar.primaryColor }}
+                    title={previewChar.weapon}
+                  >
                     {previewChar.weapon}
                   </span>
                 </div>
@@ -223,31 +203,56 @@ export const CharacterPickerModal: React.FC<CharacterPickerModalProps> = ({
             }`}
           >
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3 pb-2">
-              {filteredChars.map((char) => {
+              {CHARACTERS.map((char) => {
                 const isSelected = char.id === selectedCharacterId;
+                const isHovered = hoveredCharId === char.id;
                 const isInspecting = char.id === previewChar.id;
+
+                const borderColor = isSelected
+                  ? char.primaryColor
+                  : isHovered
+                  ? char.primaryColor
+                  : isInspecting
+                  ? `${char.primaryColor}80`
+                  : '#161D30';
+
+                const boxShadow = isSelected
+                  ? `0 0 20px ${char.primaryColor}60, inset 0 0 10px ${char.primaryColor}20`
+                  : isHovered
+                  ? `0 0 16px ${char.primaryColor}45`
+                  : isInspecting
+                  ? `0 0 10px ${char.primaryColor}25`
+                  : 'none';
 
                 return (
                   <button
                     key={char.id}
                     id={`char-select-${char.id}`}
-                    onMouseEnter={() => setPreviewId(char.id)}
-                    onClick={() => {
-                      sound.playClick();
+                    onMouseEnter={() => {
+                      setHoveredCharId(char.id);
                       setPreviewId(char.id);
-                      onSelect(char.id);
+                    }}
+                    onMouseLeave={() => setHoveredCharId(null)}
+                    onClick={() => handleSelectAndClose(char.id)}
+                    style={{
+                      borderColor,
+                      boxShadow,
+                      backgroundColor: isSelected
+                        ? '#141C33'
+                        : isHovered
+                        ? '#0F1528'
+                        : '#090C16',
                     }}
                     className={`relative group p-2 sm:p-2.5 rounded-xl sm:rounded-2xl text-left flex flex-col items-center gap-1.5 transition-all duration-200 border cursor-pointer ${
-                      isSelected
-                        ? 'bg-[#151C33] border-amber-500 shadow-[0_0_20px_rgba(245,158,11,0.3)] scale-[1.02] ring-1 ring-amber-400/50'
-                        : isInspecting
-                        ? 'bg-[#11172A] border-purple-400/60'
-                        : 'bg-[#090C16] border-[#161D30] hover:border-zinc-500/40 hover:bg-[#0E1324]'
+                      isSelected ? 'scale-[1.02] ring-1' : isHovered ? 'scale-[1.01]' : ''
                     }`}
                   >
                     {/* Active checkmark badge */}
                     {isSelected && (
-                      <div className="absolute top-1.5 right-1.5 p-0.5 sm:p-1 rounded-full bg-amber-500 text-black shadow-md z-20">
+                      <div
+                        className="absolute top-1.5 right-1.5 p-0.5 sm:p-1 rounded-full text-black shadow-md z-20"
+                        style={{ backgroundColor: char.primaryColor }}
+                      >
                         <Check className="w-2.5 h-2.5 sm:w-3 sm:h-3 stroke-[3]" />
                       </div>
                     )}
@@ -255,7 +260,12 @@ export const CharacterPickerModal: React.FC<CharacterPickerModalProps> = ({
                     <CharacterAvatar characterId={char.id} size="md" interactive3D={true} />
 
                     <div className="text-center w-full mt-0.5 min-w-0">
-                      <h4 className="text-xs font-bold text-white group-hover:text-amber-300 transition-colors truncate">
+                      <h4
+                        className="text-xs font-bold text-white transition-colors truncate"
+                        style={{
+                          color: isHovered || isSelected ? char.primaryColor : '#FFFFFF',
+                        }}
+                      >
                         {char.name}
                       </h4>
                       <p className="text-[10px] font-medium text-zinc-400 truncate mt-0.5">
@@ -264,9 +274,10 @@ export const CharacterPickerModal: React.FC<CharacterPickerModalProps> = ({
                     </div>
 
                     <div
-                      className="w-full h-0.5 rounded-full opacity-60 mt-0.5"
+                      className="w-full h-0.5 rounded-full mt-0.5 transition-opacity"
                       style={{
                         background: `linear-gradient(90deg, transparent, ${char.primaryColor}, transparent)`,
+                        opacity: isSelected || isHovered ? 1 : 0.4,
                       }}
                     />
                   </button>
@@ -280,7 +291,7 @@ export const CharacterPickerModal: React.FC<CharacterPickerModalProps> = ({
         <div className="px-3.5 sm:px-6 py-2.5 bg-[#080A14] border-t border-[#161D30] flex items-center justify-between text-xs text-zinc-400 flex-shrink-0">
           <span className="flex items-center gap-1.5 text-[10px] sm:text-xs truncate">
             <Shield className="w-3.5 h-3.5 text-amber-400 flex-shrink-0" />
-            <span className="truncate">Multiplayer Arenas & Battles</span>
+            <span className="truncate">Click any avatar to select instantly</span>
           </span>
           <button
             onClick={onClose}
@@ -293,4 +304,5 @@ export const CharacterPickerModal: React.FC<CharacterPickerModalProps> = ({
     </div>
   );
 };
+
 
