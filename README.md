@@ -115,7 +115,7 @@ The application is bundled into a single self-contained server with static asset
 
 ```bash
 # 1. Clone the repository
-git clone https://github.com/your-username/playpulse-multiplayer-arena.git
+git clone https://github.com/iamrutvikbarot/playpulse-multiplayer-arena.git
 cd playpulse-multiplayer-arena
 
 # 2. Install dependencies
@@ -145,6 +145,6 @@ npm start
 ## 👨‍💻 Author & Credits
 
 Designed and developed with ❤️ by **Rutvik Barot**  
-- **Email:** rutbarot3011@gmail.com  
+- **Email:** rutvikbarot11@gmail.com  
 - **Live Demo:** [https://playpulse-multiplayer-arena.onrender.com/](https://playpulse-multiplayer-arena.onrender.com/)
 
