@@ -396,6 +396,82 @@ export class RoomManager {
       }
       return;
     }
+
+    // 13. LEAVE ROOM
+    if (msg.type === 'ROOM_LEAVE') {
+      const { roomCode, playerId } = msg.payload || {};
+      const targetRoomCode = roomCode || conn.roomCode;
+      const targetPlayerId = playerId || conn.playerId;
+
+      if (!targetRoomCode) return;
+      this.handlePlayerLeave(targetRoomCode, targetPlayerId, ws);
+      return;
+    }
+  }
+
+  public handlePlayerLeave(roomCode: string, playerId: string, sourceWs?: WebSocket) {
+    const room = this.rooms.get(roomCode);
+    if (!room) return;
+
+    const player = room.players.find((p) => p.id === playerId);
+    if (!player) return;
+
+    // IF HOST LEAVES THE LOBBY: Disband the room and kick all players
+    if (player.isHost) {
+      // Notify all connected players that room is disbanded
+      room.players.forEach((p) => {
+        if (p.isBot) return;
+        const socket = this.playerSockets.get(p.id);
+        if (socket && socket.readyState === WebSocket.OPEN) {
+          this.send(socket, {
+            type: 'ROOM_DISBANDED',
+            payload: {
+              roomCode,
+              message: `The room host (${player.name}) has left. The room has been closed.`,
+            },
+          });
+          const c = this.connections.get(socket);
+          if (c) {
+            c.roomCode = null;
+          }
+        }
+      });
+
+      // Remove the room and its engine completely
+      this.rooms.delete(roomCode);
+      this.gameEngines.delete(roomCode);
+      return;
+    }
+
+    // Non-host player leaves:
+    room.players = room.players.filter((p) => p.id !== playerId);
+    if (sourceWs) {
+      const c = this.connections.get(sourceWs);
+      if (c) c.roomCode = null;
+      this.send(sourceWs, {
+        type: 'ROOM_LEFT',
+        payload: { roomCode },
+      });
+    }
+
+    room.chatMessages.push({
+      id: `msg_${Date.now()}`,
+      senderId: 'system',
+      senderName: 'System',
+      characterId: '',
+      text: `${player.name} left the room.`,
+      timestamp: Date.now(),
+      isSystem: true,
+    });
+
+    // If room is now empty of humans, delete it
+    const remainingHumans = room.players.filter((p) => !p.isBot);
+    if (remainingHumans.length === 0) {
+      this.rooms.delete(roomCode);
+      this.gameEngines.delete(roomCode);
+    } else {
+      this.broadcastRoom(roomCode);
+    }
   }
 
   private startGame(room: RoomState) {
@@ -647,29 +723,27 @@ export class RoomManager {
     if (player) {
       player.isConnected = false;
 
-      // Grace period before removing player
+      // Grace period before removing player or disbanding if host
       setTimeout(() => {
         const currentRoom = this.rooms.get(roomCode);
         if (!currentRoom) return;
         const pl = currentRoom.players.find((p) => p.id === playerId);
         if (pl && !pl.isConnected) {
-          currentRoom.players = currentRoom.players.filter((p) => p.id !== playerId);
-
-          // If host left, assign new host
-          if (pl.isHost && currentRoom.players.length > 0) {
-            const nextHost = currentRoom.players.find((p) => !p.isBot) || currentRoom.players[0];
-            if (nextHost) nextHost.isHost = true;
-          }
-
-          // If room empty, clean up
-          if (currentRoom.players.length === 0) {
-            this.rooms.delete(roomCode);
-            this.gameEngines.delete(roomCode);
+          if (pl.isHost) {
+            // Disband room if host disconnected and didn't reconnect
+            this.handlePlayerLeave(roomCode, playerId);
           } else {
-            this.broadcastRoom(roomCode);
+            currentRoom.players = currentRoom.players.filter((p) => p.id !== playerId);
+            const remainingHumans = currentRoom.players.filter((p) => !p.isBot);
+            if (remainingHumans.length === 0) {
+              this.rooms.delete(roomCode);
+              this.gameEngines.delete(roomCode);
+            } else {
+              this.broadcastRoom(roomCode);
+            }
           }
         }
-      }, 10000);
+      }, 5000);
 
       this.broadcastRoom(roomCode);
     }

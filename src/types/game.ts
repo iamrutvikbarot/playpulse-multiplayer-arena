@@ -211,6 +211,8 @@ export type WSMessageType =
   | 'ROOM_JOIN'
   | 'ROOM_CREATE'
   | 'ROOM_LEAVE'
+  | 'ROOM_LEFT'
+  | 'ROOM_DISBANDED'
   | 'PLAYER_UPDATE'
   | 'PLAYER_READY'
   | 'BOT_ADD'

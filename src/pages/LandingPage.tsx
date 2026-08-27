@@ -55,9 +55,21 @@ export const LandingPage: React.FC<LandingPageProps> = ({
   });
 
   const [selectedGame, setSelectedGame] = useState<GameId>('tic-tac-toe');
-  const [joinCode, setJoinCode] = useState('');
+  const [joinCode, setJoinCode] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      return (params.get('room') || '').toUpperCase().trim();
+    }
+    return '';
+  });
   const [isCharModalOpen, setIsCharModalOpen] = useState(false);
-  const [actionTab, setActionTab] = useState<'create' | 'join'>('create');
+  const [actionTab, setActionTab] = useState<'create' | 'join'>(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('room')) return 'join';
+    }
+    return 'create';
+  });
 
   const selectedChar = getCharacterById(selectedCharacterId);
 

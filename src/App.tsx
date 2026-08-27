@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { BackgroundEffect } from './components/BackgroundEffect';
 import { ChatOverlay } from './components/ChatOverlay';
+import { ConnectingLoader } from './components/ConnectingLoader';
 import { GameHeader } from './components/GameHeader';
 import { GameResultModal } from './components/GameResultModal';
 import { CardBattleView } from './games/CardBattleView';
@@ -45,9 +46,9 @@ export default function App() {
       const params = new URLSearchParams(window.location.search);
       const roomParam = params.get('room');
       if (roomParam && !room) {
-        const savedName = localStorage.getItem('playpulse_saved_name') || 'Guest Player';
-        const savedChar = localStorage.getItem('playpulse_saved_character') || 'char_knight';
-        joinRoom(roomParam.toUpperCase(), savedName, savedChar);
+        const savedName = localStorage.getItem('playpulse_saved_name') || 'Player';
+        const savedChar = localStorage.getItem('playpulse_saved_character') || 'char_ironman';
+        joinRoom(roomParam.toUpperCase().trim(), savedName, savedChar);
       }
     }
   }, [joinRoom, room]);
@@ -63,17 +64,16 @@ export default function App() {
   };
 
   return (
-    <div className="relative min-h-screen bg-[#080A12] text-zinc-100 flex flex-col selection:bg-purple-500 selection:text-white font-sans antialiased overflow-x-hidden">
-      {/* Dynamic Animated Particle Canvas Background */}
+    <div className="relative min-h-screen bg-[#070913] text-zinc-100 flex flex-col selection:bg-purple-500 selection:text-white font-sans antialiased overflow-x-hidden">
+      {/* 3D Animated Particle & Polyhedra Background */}
       <BackgroundEffect />
 
-      {/* Connection Indicator when disconnected/connecting */}
-      {!connected && (
-        <div className="fixed top-2 right-2 z-50 px-3 py-1 rounded-full bg-amber-500/20 border border-amber-500/40 text-amber-300 text-[11px] font-bold flex items-center gap-1.5 backdrop-blur-md">
-          <span className="w-2 h-2 rounded-full bg-amber-400 animate-ping" />
-          <span>{connecting ? 'Connecting to Server...' : 'Reconnecting...'}</span>
-        </div>
-      )}
+      {/* Project Custom Loader until server connection is established */}
+      <ConnectingLoader
+        connecting={connecting}
+        connected={connected}
+        error={!connected && !connecting ? 'Reconnecting to game server...' : null}
+      />
 
       {/* Screen 1: Landing Page (No active room) */}
       {!room && (

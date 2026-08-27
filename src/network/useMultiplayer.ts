@@ -37,6 +37,7 @@ export function useMultiplayer(): MultiplayerHook {
   const socketRef = useRef<WebSocket | null>(null);
   const pingStartRef = useRef<number>(0);
   const reconnectTimeoutRef = useRef<any>(null);
+  const messageQueueRef = useRef<WSMessage[]>([]);
 
   // Ephemeral session ID stored in sessionStorage
   const [currentUserId] = useState<string>(() => {
@@ -50,9 +51,29 @@ export function useMultiplayer(): MultiplayerHook {
     return `player_${Date.now()}`;
   });
 
+  // Helper to sync browser URL with room code
+  const syncUrlWithRoom = useCallback((roomCode: string | null) => {
+    if (typeof window !== 'undefined') {
+      try {
+        const url = new URL(window.location.href);
+        if (roomCode) {
+          url.searchParams.set('room', roomCode);
+          window.history.replaceState({}, '', url.toString());
+        } else {
+          url.searchParams.delete('room');
+          window.history.replaceState({}, '', url.pathname);
+        }
+      } catch (e) {}
+    }
+  }, []);
+
   const send = useCallback((msg: WSMessage) => {
+    const formatted = { ...msg, senderId: currentUserId, timestamp: Date.now() };
     if (socketRef.current && socketRef.current.readyState === WebSocket.OPEN) {
-      socketRef.current.send(JSON.stringify({ ...msg, senderId: currentUserId, timestamp: Date.now() }));
+      socketRef.current.send(JSON.stringify(formatted));
+    } else {
+      // Queue action to send once socket opens
+      messageQueueRef.current.push(formatted);
     }
   }, [currentUserId]);
 
@@ -66,8 +87,14 @@ export function useMultiplayer(): MultiplayerHook {
     }
 
     setConnecting(true);
+    // Support custom external WebSocket host when deployed separately on Vercel/Next.js
+    const customWsUrl =
+      (typeof process !== 'undefined' && process.env?.NEXT_PUBLIC_WS_URL) ||
+      (typeof import.meta !== 'undefined' && (import.meta as any).env?.VITE_WS_URL) ||
+      null;
+
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const wsUrl = `${protocol}//${window.location.host}`;
+    const wsUrl = customWsUrl || `${protocol}//${window.location.host}`;
 
     const ws = new WebSocket(wsUrl);
     socketRef.current = ws;
@@ -76,6 +103,16 @@ export function useMultiplayer(): MultiplayerHook {
       setConnected(true);
       setConnecting(false);
       setError(null);
+
+      // Flush any queued messages (e.g. pending URL auto-join)
+      if (messageQueueRef.current.length > 0) {
+        while (messageQueueRef.current.length > 0) {
+          const qMsg = messageQueueRef.current.shift();
+          if (qMsg && ws.readyState === WebSocket.OPEN) {
+            ws.send(JSON.stringify(qMsg));
+          }
+        }
+      }
 
       // Ping to measure latency
       pingStartRef.current = Date.now();
@@ -93,13 +130,32 @@ export function useMultiplayer(): MultiplayerHook {
         }
 
         if (msg.type === 'ROOM_SYNC') {
-          setRoom(msg.payload as RoomState);
+          const roomState = msg.payload as RoomState;
+          setRoom(roomState);
           setError(null);
+          if (roomState.code) {
+            syncUrlWithRoom(roomState.code);
+          }
+          return;
+        }
+
+        if (msg.type === 'ROOM_DISBANDED') {
+          setRoom(null);
+          syncUrlWithRoom(null);
+          setError(msg.payload?.message || 'The host left the lobby. The room has been closed.');
+          sound.playDefeat();
+          return;
+        }
+
+        if (msg.type === 'ROOM_LEFT') {
+          setRoom(null);
+          syncUrlWithRoom(null);
           return;
         }
 
         if (msg.type === 'ERROR') {
           setError(msg.payload?.message || 'An error occurred');
+          syncUrlWithRoom(null);
           sound.playDefeat();
           return;
         }
@@ -121,7 +177,7 @@ export function useMultiplayer(): MultiplayerHook {
       setConnected(false);
       setConnecting(false);
     };
-  }, []);
+  }, [syncUrlWithRoom]);
 
   useEffect(() => {
     connectSocket();
@@ -281,8 +337,15 @@ export function useMultiplayer(): MultiplayerHook {
 
   const leaveRoom = useCallback(() => {
     sound.playClick();
+    if (room) {
+      send({
+        type: 'ROOM_LEAVE',
+        payload: { roomCode: room.code, playerId: currentUserId },
+      });
+    }
     setRoom(null);
-  }, []);
+    syncUrlWithRoom(null);
+  }, [room, currentUserId, send, syncUrlWithRoom]);
 
   const currentPlayer = room?.players.find((p) => p.id === currentUserId) || null;
   const isHost = currentPlayer?.isHost || false;
