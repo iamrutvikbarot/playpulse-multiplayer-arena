@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { GameId, Player, RoomSettings, RoomState, WSMessage } from '../types/game';
+import { GameId, Player, ReactionBurstData, RoomSettings, RoomState, WSMessage } from '../types/game';
 import { sound } from '../utils/audio';
 
 export interface MultiplayerHook {
@@ -11,6 +11,7 @@ export interface MultiplayerHook {
   currentUserId: string;
   currentPlayer: Player | null;
   isHost: boolean;
+  reactionBursts: ReactionBurstData[];
   createRoom: (playerName: string, characterId: string, initialGame?: GameId, settings?: Partial<RoomSettings>) => void;
   joinRoom: (roomCode: string, playerName: string, characterId: string) => void;
   toggleReady: (isReady?: boolean) => void;
@@ -23,6 +24,9 @@ export interface MultiplayerHook {
   addBot: () => void;
   removeBot: (botId: string) => void;
   sendChatMessage: (text: string, isEmote?: boolean) => void;
+  sendReactionBurst: (emoji: string) => void;
+  sendMessage: (msg: WSMessage) => void;
+  registerSignalingHandler: (handler: (msg: WSMessage) => void) => () => void;
   leaveRoom: () => void;
   clearError: () => void;
 }
@@ -33,11 +37,13 @@ export function useMultiplayer(): MultiplayerHook {
   const [latency, setLatency] = useState(0);
   const [room, setRoom] = useState<RoomState | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [reactionBursts, setReactionBursts] = useState<ReactionBurstData[]>([]);
 
   const socketRef = useRef<WebSocket | null>(null);
   const pingStartRef = useRef<number>(0);
   const reconnectTimeoutRef = useRef<any>(null);
   const messageQueueRef = useRef<WSMessage[]>([]);
+  const signalingHandlersRef = useRef<Set<(msg: WSMessage) => void>>(new Set());
 
   // Ephemeral session ID stored in sessionStorage
   const [currentUserId] = useState<string>(() => {
@@ -67,15 +73,25 @@ export function useMultiplayer(): MultiplayerHook {
     }
   }, []);
 
-  const send = useCallback((msg: WSMessage) => {
-    const formatted = { ...msg, senderId: currentUserId, timestamp: Date.now() };
-    if (socketRef.current && socketRef.current.readyState === WebSocket.OPEN) {
-      socketRef.current.send(JSON.stringify(formatted));
-    } else {
-      // Queue action to send once socket opens
-      messageQueueRef.current.push(formatted);
-    }
-  }, [currentUserId]);
+  const send = useCallback(
+    (msg: WSMessage) => {
+      const formatted = { ...msg, senderId: currentUserId, timestamp: Date.now() };
+      if (socketRef.current && socketRef.current.readyState === WebSocket.OPEN) {
+        socketRef.current.send(JSON.stringify(formatted));
+      } else {
+        // Queue action to send once socket opens
+        messageQueueRef.current.push(formatted);
+      }
+    },
+    [currentUserId]
+  );
+
+  const registerSignalingHandler = useCallback((handler: (msg: WSMessage) => void) => {
+    signalingHandlersRef.current.add(handler);
+    return () => {
+      signalingHandlersRef.current.delete(handler);
+    };
+  }, []);
 
   const connectSocket = useCallback(() => {
     if (typeof window === 'undefined') return;
@@ -87,7 +103,6 @@ export function useMultiplayer(): MultiplayerHook {
     }
 
     setConnecting(true);
-    // Support custom external WebSocket host when deployed separately on Vercel/Next.js
     const customWsUrl =
       (typeof process !== 'undefined' && process.env?.NEXT_PUBLIC_WS_URL) ||
       (typeof import.meta !== 'undefined' && (import.meta as any).env?.VITE_WS_URL) ||
@@ -104,7 +119,7 @@ export function useMultiplayer(): MultiplayerHook {
       setConnecting(false);
       setError(null);
 
-      // Flush any queued messages (e.g. pending URL auto-join)
+      // Flush queued messages
       if (messageQueueRef.current.length > 0) {
         while (messageQueueRef.current.length > 0) {
           const qMsg = messageQueueRef.current.shift();
@@ -123,15 +138,50 @@ export function useMultiplayer(): MultiplayerHook {
       try {
         const msg: WSMessage = JSON.parse(event.data);
 
+        // Notify signaling listeners (WebRTC)
+        if (
+          msg.type === 'WEBRTC_SIGNAL' ||
+          msg.type === 'WEBRTC_JOIN_CALL' ||
+          msg.type === 'WEBRTC_LEAVE_CALL' ||
+          msg.type === 'MEDIA_STATE_UPDATE'
+        ) {
+          signalingHandlersRef.current.forEach((handler) => handler(msg));
+          return;
+        }
+
         if (msg.type === 'PONG') {
           const rtt = Date.now() - pingStartRef.current;
           setLatency(Math.max(5, Math.round(rtt)));
           return;
         }
 
+        if (msg.type === 'REACTION_BURST') {
+          const burst = msg.payload as ReactionBurstData;
+          if (burst) {
+            sound.playReactionPop();
+            setReactionBursts((prev) => [...prev.slice(-15), burst]);
+            setTimeout(() => {
+              setReactionBursts((prev) => prev.filter((b) => b.id !== burst.id));
+            }, 2600);
+          }
+          return;
+        }
+
         if (msg.type === 'ROOM_SYNC') {
           const roomState = msg.payload as RoomState;
-          setRoom(roomState);
+          setRoom((prev) => {
+            // Play message sound if a new message from someone else arrived
+            if (
+              prev &&
+              roomState.chatMessages.length > prev.chatMessages.length
+            ) {
+              const latest = roomState.chatMessages[roomState.chatMessages.length - 1];
+              if (latest && latest.senderId !== currentUserId && !latest.isSystem) {
+                sound.playMessagePing();
+              }
+            }
+            return roomState;
+          });
           setError(null);
           if (roomState.code) {
             syncUrlWithRoom(roomState.code);
@@ -167,7 +217,6 @@ export function useMultiplayer(): MultiplayerHook {
     ws.onclose = () => {
       setConnected(false);
       setConnecting(false);
-      // Auto reconnect after 2 seconds
       reconnectTimeoutRef.current = setTimeout(() => {
         connectSocket();
       }, 2000);
@@ -177,12 +226,11 @@ export function useMultiplayer(): MultiplayerHook {
       setConnected(false);
       setConnecting(false);
     };
-  }, [syncUrlWithRoom]);
+  }, [syncUrlWithRoom, currentUserId]);
 
   useEffect(() => {
     connectSocket();
 
-    // Periodic ping loop
     const pingInterval = setInterval(() => {
       if (socketRef.current && socketRef.current.readyState === WebSocket.OPEN) {
         pingStartRef.current = Date.now();
@@ -335,6 +383,41 @@ export function useMultiplayer(): MultiplayerHook {
     [send, room, currentUserId]
   );
 
+  const sendReactionBurst = useCallback(
+    (emoji: string) => {
+      if (!room) return;
+      const me = room.players.find((p) => p.id === currentUserId);
+      const xPercent = 20 + Math.floor(Math.random() * 60);
+
+      // Trigger locally immediately
+      const localBurst: ReactionBurstData = {
+        id: `burst_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+        emoji,
+        senderName: me?.name || 'You',
+        characterId: me?.characterId || '',
+        timestamp: Date.now(),
+        x: xPercent,
+      };
+      sound.playReactionPop();
+      setReactionBursts((prev) => [...prev.slice(-15), localBurst]);
+      setTimeout(() => {
+        setReactionBursts((prev) => prev.filter((b) => b.id !== localBurst.id));
+      }, 2600);
+
+      send({
+        type: 'REACTION_BURST',
+        payload: {
+          roomCode: room.code,
+          emoji,
+          senderName: me?.name || 'Player',
+          characterId: me?.characterId || '',
+          x: xPercent,
+        },
+      });
+    },
+    [send, room, currentUserId]
+  );
+
   const leaveRoom = useCallback(() => {
     sound.playClick();
     if (room) {
@@ -359,6 +442,7 @@ export function useMultiplayer(): MultiplayerHook {
     currentUserId,
     currentPlayer,
     isHost,
+    reactionBursts,
     createRoom,
     joinRoom,
     toggleReady,
@@ -371,7 +455,11 @@ export function useMultiplayer(): MultiplayerHook {
     addBot,
     removeBot,
     sendChatMessage,
+    sendReactionBurst,
+    sendMessage: send,
+    registerSignalingHandler,
     leaveRoom,
     clearError: () => setError(null),
   };
 }
+

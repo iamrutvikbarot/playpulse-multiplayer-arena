@@ -4,6 +4,11 @@ export interface Character {
   id: string;
   name: string;
   title: string;
+  gender: 'male' | 'female';
+  role?: string;
+  faction: string;
+  weapon: string;
+  origin: string;
   primaryColor: string;
   secondaryColor: string;
   accentBg: string;
@@ -224,11 +229,34 @@ export type WSMessageType =
   | 'RETURN_TO_LOBBY'
   | 'CHAT_MESSAGE'
   | 'CHAT_EMOTE'
+  | 'REACTION_BURST'
+  | 'WEBRTC_SIGNAL'
+  | 'WEBRTC_JOIN_CALL'
+  | 'WEBRTC_LEAVE_CALL'
+  | 'MEDIA_STATE_UPDATE'
   | 'PING'
   | 'PONG'
   | 'ROOM_SYNC'
   | 'GAME_SYNC'
   | 'ERROR';
+
+export interface PlayerMediaState {
+  playerId: string;
+  isAudioOn: boolean;
+  isVideoOn: boolean;
+  isScreenSharing: boolean;
+  inCall: boolean;
+  isSpeaking?: boolean;
+}
+
+export interface ReactionBurstData {
+  id: string;
+  emoji: string;
+  senderName: string;
+  characterId?: string;
+  timestamp: number;
+  x?: number; // percentage across screen (20% - 80%)
+}
 
 export interface WSMessage<T = any> {
   type: WSMessageType;

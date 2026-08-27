@@ -3,6 +3,7 @@ import {
   Copy,
   LogOut,
   MessageSquare,
+  Video,
   Volume2,
   VolumeX,
   Wifi,
@@ -19,6 +20,10 @@ interface GameHeaderProps {
   onLeave: () => void;
   onToggleChat?: () => void;
   unreadChatCount?: number;
+  // Video Call props
+  isInCall?: boolean;
+  onToggleVideoCall?: () => void;
+  onTriggerReaction?: (emoji: string) => void;
 }
 
 export const GameHeader: React.FC<GameHeaderProps> = ({
@@ -27,6 +32,9 @@ export const GameHeader: React.FC<GameHeaderProps> = ({
   onLeave,
   onToggleChat,
   unreadChatCount = 0,
+  isInCall = false,
+  onToggleVideoCall,
+  onTriggerReaction,
 }) => {
   const [copied, setCopied] = useState(false);
   const [isMuted, setIsMuted] = useState(sound.getMuted());
@@ -48,7 +56,7 @@ export const GameHeader: React.FC<GameHeaderProps> = ({
   };
 
   return (
-    <header className="relative z-30 w-full px-4 sm:px-6 py-3 bg-[#0C101C]/90 backdrop-blur-md border-b border-[#1A2238] flex items-center justify-between gap-4">
+    <header className="sticky top-0 z-40 w-full px-4 sm:px-6 py-2.5 sm:py-3 bg-[#0C101C]/95 backdrop-blur-xl border-b border-[#1A2238] shadow-lg flex items-center justify-between gap-4 transition-all">
       {/* Left: Game Title + Room Badge */}
       <div className="flex items-center gap-3">
         <div className="flex flex-col">
@@ -108,8 +116,42 @@ export const GameHeader: React.FC<GameHeaderProps> = ({
         })}
       </div>
 
-      {/* Right Controls: Chat, Mute, Leave */}
+      {/* Right Controls: Video Call, Chat, Reactions, Mute, Leave */}
       <div className="flex items-center gap-2">
+        {/* Quick Reaction Burst Button */}
+        {onTriggerReaction && (
+          <button
+            onClick={() => onTriggerReaction('🔥')}
+            id="btn-quick-reaction-flame"
+            className="p-2 rounded-xl bg-[#111627] hover:bg-[#182035] border border-[#1E263D] hover:border-amber-500/40 text-amber-400 hover:scale-110 active:scale-90 transition-all cursor-pointer text-sm"
+            title="Launch Fire Reaction Burst (🔥)"
+          >
+            🔥
+          </button>
+        )}
+
+        {/* Video Call Quick Button */}
+        {onToggleVideoCall && (
+          <button
+            onClick={onToggleVideoCall}
+            id="btn-toggle-video-call"
+            className={`relative p-2 rounded-xl border transition-all cursor-pointer ${
+              isInCall
+                ? 'bg-emerald-600/20 border-emerald-500/50 text-emerald-400 shadow-[0_0_12px_rgba(16,185,129,0.3)]'
+                : 'bg-[#111627] hover:bg-[#182035] border-[#1E263D] text-zinc-300 hover:text-white'
+            }`}
+            title={isInCall ? 'Video Call (Active)' : 'Start Video & Voice Call'}
+          >
+            <Video className="w-4 h-4" />
+            {isInCall && (
+              <span className="absolute -top-1 -right-1 flex h-2.5 w-2.5">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500" />
+              </span>
+            )}
+          </button>
+        )}
+
         {onToggleChat && (
           <button
             onClick={onToggleChat}
@@ -119,7 +161,7 @@ export const GameHeader: React.FC<GameHeaderProps> = ({
           >
             <MessageSquare className="w-4 h-4" />
             {unreadChatCount > 0 && (
-              <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-pink-500 text-[10px] font-bold text-white flex items-center justify-center animate-bounce">
+              <span className="absolute -top-1 -right-1 px-1.5 py-0.2 rounded-full bg-pink-500 text-[10px] font-bold text-white flex items-center justify-center animate-bounce shadow">
                 {unreadChatCount}
               </span>
             )}

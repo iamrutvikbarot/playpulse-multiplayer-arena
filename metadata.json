@@ -1,7 +1,10 @@
 {
   "name": "PlayPulse Multiplayer Arena",
-  "description": "Real-time multiplayer browser gaming platform featuring Tic-Tac-Toe, Rock Paper Scissors, Classic Ludo, UNO Card Game, and Formula Mini Racing with instant room codes and live multiplayer synchronization.",
-  "requestFramePermissions": [],
+  "description": "Real-time multiplayer browser gaming platform featuring Tic-Tac-Toe, Rock Paper Scissors, Classic Ludo, UNO Card Game, and Formula Mini Racing with 10 iconic Mahabharat heroes and villains, interactive 3D perspective avatars, and Three.js cosmic backgrounds.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone"
+  ],
   "majorCapabilities": [
     "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
   ]

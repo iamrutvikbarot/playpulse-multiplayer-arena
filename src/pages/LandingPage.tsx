@@ -24,7 +24,7 @@ import { CharacterAvatar } from '../components/CharacterAvatar';
 import { CharacterPickerModal } from '../components/CharacterPickerModal';
 import { GameId } from '../types/game';
 import { sound } from '../utils/audio';
-import { CHARACTERS, getCharacterById } from '../utils/characters';
+import { CHARACTERS, getCharacterById, getRandomCharacter, isLegacyHeroName } from '../utils/characters';
 import { GAMES_CATALOGUE } from '../utils/gameInfo';
 
 interface LandingPageProps {
@@ -40,18 +40,25 @@ export const LandingPage: React.FC<LandingPageProps> = ({
   error,
   onClearError,
 }) => {
-  const [playerName, setPlayerName] = useState(() => {
-    if (typeof window !== 'undefined') {
-      return localStorage.getItem('playpulse_saved_name') || '';
-    }
-    return '';
+  // Always generate a fresh random Mahabharat character when page loads
+  const [selectedCharacterId, setSelectedCharacterId] = useState<string>(() => {
+    const randomChar = getRandomCharacter();
+    return randomChar.id;
   });
 
-  const [selectedCharacterId, setSelectedCharacterId] = useState<string>(() => {
+  const selectedChar = getCharacterById(selectedCharacterId);
+
+  const [playerName, setPlayerName] = useState(() => {
     if (typeof window !== 'undefined') {
-      return localStorage.getItem('playpulse_saved_character') || 'char_knight';
+      const saved = localStorage.getItem('playpulse_saved_name');
+      // If no saved name or if it's a legacy placeholder name, migrate cleanly to the character name
+      if (!saved || isLegacyHeroName(saved)) {
+        localStorage.setItem('playpulse_saved_name', selectedChar.name);
+        return selectedChar.name;
+      }
+      return saved;
     }
-    return 'char_knight';
+    return selectedChar.name;
   });
 
   const [selectedGame, setSelectedGame] = useState<GameId>('tic-tac-toe');
@@ -71,12 +78,22 @@ export const LandingPage: React.FC<LandingPageProps> = ({
     return 'create';
   });
 
-  const selectedChar = getCharacterById(selectedCharacterId);
-
   const saveProfile = (name: string, charId: string) => {
     if (typeof window !== 'undefined') {
       localStorage.setItem('playpulse_saved_name', name);
       localStorage.setItem('playpulse_saved_character', charId);
+    }
+  };
+
+  const handleCharacterSelect = (charId: string) => {
+    const newChar = getCharacterById(charId);
+    setSelectedCharacterId(charId);
+    // Auto update player nickname if previous was empty or matches any character name or is legacy
+    if (!playerName.trim() || isLegacyHeroName(playerName) || CHARACTERS.some((c) => c.name.toLowerCase() === playerName.trim().toLowerCase())) {
+      setPlayerName(newChar.name);
+      saveProfile(newChar.name, charId);
+    } else {
+      saveProfile(playerName, charId);
     }
   };
 
@@ -102,9 +119,9 @@ export const LandingPage: React.FC<LandingPageProps> = ({
   };
 
   return (
-    <div className="relative z-10 w-full min-h-screen flex flex-col justify-between p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto space-y-6">
-      {/* Top Navbar Bento Header */}
-      <header className="w-full flex items-center justify-between p-3.5 sm:p-4 rounded-2xl bg-[#0C101C]/90 border border-[#1A2238] shadow-lg backdrop-blur-md">
+    <div className="relative z-10 w-full h-full max-h-full flex flex-col justify-between p-3 sm:p-4 lg:p-6 max-w-7xl mx-auto overflow-hidden">
+      {/* Top Navbar Bento Header (Fixed top, never scrolls) */}
+      <header className="flex-shrink-0 w-full flex items-center justify-between p-3 sm:p-4 rounded-2xl bg-[#0C101C]/95 border border-[#1A2238] shadow-2xl backdrop-blur-xl mb-3 sm:mb-4">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-purple-600 via-indigo-600 to-pink-500 p-0.5 shadow-md shadow-purple-600/30 flex-shrink-0">
             <div className="w-full h-full bg-[#090C16] rounded-[10px] flex items-center justify-center">
@@ -153,26 +170,28 @@ export const LandingPage: React.FC<LandingPageProps> = ({
         </div>
       </header>
 
-      {/* Error Alert if any */}
-      {error && (
-        <div className="w-full p-4 rounded-2xl bg-red-950/80 border border-red-500/50 text-red-200 text-xs font-semibold flex items-center justify-between shadow-lg">
-          <div className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-red-400 animate-ping" />
-            <span>{error}</span>
+      {/* Center Scrollable Content Area ONLY */}
+      <main className="flex-1 overflow-y-auto min-h-0 space-y-4 sm:space-y-6 pr-1 sm:pr-2 pb-2">
+        {/* Error Alert if any */}
+        {error && (
+          <div className="w-full p-4 rounded-2xl bg-red-950/80 border border-red-500/50 text-red-200 text-xs font-semibold flex items-center justify-between shadow-lg">
+            <div className="flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-red-400 animate-ping" />
+              <span>{error}</span>
+            </div>
+            {onClearError && (
+              <button
+                onClick={onClearError}
+                className="px-2.5 py-1 rounded-lg bg-red-900/60 hover:bg-red-800/80 text-red-200 text-xs font-bold transition-colors cursor-pointer"
+              >
+                Dismiss
+              </button>
+            )}
           </div>
-          {onClearError && (
-            <button
-              onClick={onClearError}
-              className="px-2.5 py-1 rounded-lg bg-red-900/60 hover:bg-red-800/80 text-red-200 text-xs font-bold transition-colors cursor-pointer"
-            >
-              Dismiss
-            </button>
-          )}
-        </div>
-      )}
+        )}
 
-      {/* Bento Grid Main Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-6 w-full">
+        {/* Bento Grid Main Section */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-6 w-full">
         {/* Bento Box 1: Hero & Room Launchpad (col-span-8) */}
         <div className="lg:col-span-7 xl:col-span-8 rounded-3xl bg-[#0C101C]/90 border border-[#1A2238] p-6 sm:p-8 flex flex-col justify-between shadow-xl backdrop-blur-md relative overflow-hidden">
           {/* Ambient Corner Glow */}
@@ -349,27 +368,45 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             <div className="flex items-center justify-between mb-4">
               <span className="text-xs font-bold text-zinc-400 uppercase tracking-wider flex items-center gap-1.5">
                 <Crown className="w-4 h-4 text-amber-400" />
-                Active Avatar
+                Active Mahabharat Legend
               </span>
-              <button
-                onClick={() => {
-                  sound.playClick();
-                  setIsCharModalOpen(true);
-                }}
-                className="text-xs text-purple-400 hover:text-purple-300 font-bold underline cursor-pointer"
-              >
-                Change Avatar
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    sound.playClick();
+                    const randomChar = getRandomCharacter();
+                    handleCharacterSelect(randomChar.id);
+                  }}
+                  className="text-xs text-amber-400 hover:text-amber-300 font-bold flex items-center gap-1 cursor-pointer bg-[#141A2E] hover:bg-[#1C2542] px-2.5 py-1 rounded-lg border border-[#202945] transition-colors"
+                  title="Randomize Character"
+                >
+                  <Dices className="w-3.5 h-3.5" />
+                  <span>Random</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    sound.playClick();
+                    setIsCharModalOpen(true);
+                  }}
+                  className="text-xs text-amber-400 hover:text-amber-300 font-bold underline cursor-pointer"
+                >
+                  Change
+                </button>
+              </div>
             </div>
 
             {/* Character Showcase Card */}
             <div className="p-4 rounded-2xl bg-[#080B14] border border-[#161D30] flex items-center gap-4">
-              <CharacterAvatar characterId={selectedCharacterId} size="lg" />
-              <div>
-                <h3 className="font-display font-extrabold text-base text-white">
-                  {selectedChar.name}
-                </h3>
-                <p className="text-xs text-purple-300 font-semibold">{selectedChar.title}</p>
+              <CharacterAvatar characterId={selectedCharacterId} size="lg" interactive3D={true} />
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2">
+                  <h3 className="font-display font-extrabold text-base text-white truncate">
+                    {selectedChar.name}
+                  </h3>
+                </div>
+                <p className="text-xs text-amber-300 font-semibold truncate">{selectedChar.title}</p>
                 <p className="text-[11px] text-zinc-400 mt-1 line-clamp-2 leading-relaxed">
                   {selectedChar.description}
                 </p>
@@ -379,21 +416,21 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             {/* Stats Chips */}
             <div className="grid grid-cols-3 gap-2 mt-4">
               <div className="p-2.5 rounded-xl bg-[#111627] border border-[#1E263D] text-center">
-                <span className="text-[10px] text-zinc-500 font-bold uppercase block">Archetype</span>
-                <span className="text-xs font-extrabold text-amber-300 capitalize truncate block">
-                  {selectedChar.title.split(' ')[1] || 'Hero'}
+                <span className="text-[10px] text-zinc-500 font-bold uppercase block">Astra / Weapon</span>
+                <span className="text-[11px] font-extrabold text-amber-300 truncate block" title={selectedChar.weapon}>
+                  {selectedChar.weapon.split('&')[0]}
                 </span>
               </div>
               <div className="p-2.5 rounded-xl bg-[#111627] border border-[#1E263D] text-center">
-                <span className="text-[10px] text-zinc-500 font-bold uppercase block">Color</span>
-                <span className="text-xs font-extrabold text-cyan-300 capitalize truncate block" style={{ color: selectedChar.primaryColor }}>
-                  {selectedChar.title.split(' ')[0]}
+                <span className="text-[10px] text-zinc-500 font-bold uppercase block">Origin</span>
+                <span className="text-[11px] font-extrabold text-cyan-300 truncate block" title={selectedChar.origin}>
+                  {selectedChar.origin.split('/')[0]}
                 </span>
               </div>
               <div className="p-2.5 rounded-xl bg-[#111627] border border-[#1E263D] text-center">
-                <span className="text-[10px] text-zinc-500 font-bold uppercase block">Roster</span>
-                <span className="text-xs font-extrabold text-purple-300 block">
-                  {CHARACTERS.length} Avatars
+                <span className="text-[10px] text-zinc-500 font-bold uppercase block">Faction</span>
+                <span className="text-[11px] font-extrabold text-purple-300 truncate block" title={selectedChar.faction}>
+                  {selectedChar.faction.split('(')[0]}
                 </span>
               </div>
             </div>
@@ -403,15 +440,15 @@ export const LandingPage: React.FC<LandingPageProps> = ({
           <div className="mt-6 pt-4 border-t border-[#161D30] space-y-2 text-xs text-zinc-400">
             <div className="flex items-center gap-2">
               <Check className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" />
-              <span>Zero installs, zero registrations, instant access</span>
+              <span>10 Iconic Mahabharat Characters</span>
             </div>
             <div className="flex items-center gap-2">
               <Check className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" />
-              <span>Cross-platform sync on phones, tablets, PCs</span>
+              <span>Interactive 3D Perspective Tilt & Vector Artwork</span>
             </div>
             <div className="flex items-center gap-2">
               <Check className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" />
-              <span>Built-in smart AI bots for solo or team practice</span>
+              <span>Sub-50ms Real-Time Multiplayer across 5 Arenas</span>
             </div>
           </div>
         </div>
@@ -467,9 +504,10 @@ export const LandingPage: React.FC<LandingPageProps> = ({
           ))}
         </div>
       </div>
+      </main>
 
-      {/* Footer */}
-      <footer className="w-full text-center text-xs text-zinc-500 py-3 border-t border-[#1A2238]/60 flex flex-col sm:flex-row items-center justify-between gap-2 px-2">
+      {/* Pinned Footer (Fixed bottom, never scrolls) */}
+      <footer className="flex-shrink-0 mt-2 sm:mt-3 w-full text-center text-xs text-zinc-400 py-2.5 sm:py-3 px-4 rounded-xl sm:rounded-2xl bg-[#080B15]/95 backdrop-blur-xl border border-[#1A2238]/80 shadow-[0_-10px_30px_rgba(0,0,0,0.8)] flex flex-col sm:flex-row items-center justify-between gap-2">
         <span>PlayPulse Arena • Real-Time Server-Authoritative Multiplayer</span>
         <span className="text-zinc-400 font-medium">
           Made with ❤️ and AI by <strong className="text-purple-400 font-bold">Rutvik Barot</strong>
@@ -480,10 +518,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
       <CharacterPickerModal
         isOpen={isCharModalOpen}
         selectedCharacterId={selectedCharacterId}
-        onSelect={(charId) => {
-          setSelectedCharacterId(charId);
-          saveProfile(playerName, charId);
-        }}
+        onSelect={handleCharacterSelect}
         onClose={() => setIsCharModalOpen(false)}
       />
     </div>

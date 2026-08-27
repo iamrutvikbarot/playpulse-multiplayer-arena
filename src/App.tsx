@@ -4,15 +4,19 @@ import { ChatOverlay } from './components/ChatOverlay';
 import { ConnectingLoader } from './components/ConnectingLoader';
 import { GameHeader } from './components/GameHeader';
 import { GameResultModal } from './components/GameResultModal';
+import { ReactionBurstOverlay } from './components/ReactionBurstOverlay';
+import { VideoCallOverlay } from './components/VideoCallOverlay';
 import { CardBattleView } from './games/CardBattleView';
 import { LudoView } from './games/LudoView';
 import { MiniRacingView } from './games/MiniRacingView';
 import { RPSBattleView } from './games/RPSBattleView';
 import { TicTacToeView } from './games/TicTacToeView';
 import { useMultiplayer } from './network/useMultiplayer';
+import { useWebRTC } from './network/useWebRTC';
 import { LandingPage } from './pages/LandingPage';
 import { RoomLobby } from './pages/RoomLobby';
 import { GameId } from './types/game';
+import { getRandomCharacter } from './utils/characters';
 
 export default function App() {
   const {
@@ -21,6 +25,7 @@ export default function App() {
     room,
     error,
     currentUserId,
+    reactionBursts,
     createRoom,
     joinRoom,
     toggleReady,
@@ -33,12 +38,30 @@ export default function App() {
     addBot,
     removeBot,
     sendChatMessage,
+    sendReactionBurst,
     leaveRoom,
     clearError,
+    registerSignalingHandler,
+    sendMessage,
   } = useMultiplayer();
 
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [lastReadChatCount, setLastReadChatCount] = useState(0);
+
+  // WebRTC Video & Audio Hook
+  const webRTC = useWebRTC({
+    roomCode: room?.code || null,
+    currentUserId,
+    players: room?.players || [],
+    sendMessage,
+  });
+
+  // Connect WebRTC signaling dispatcher to multiplayer socket messages
+  useEffect(() => {
+    registerSignalingHandler((data) => {
+      webRTC.handleSignalingMessage(data);
+    });
+  }, [registerSignalingHandler, webRTC]);
 
   // Check URL query parameters for auto-room join
   useEffect(() => {
@@ -47,7 +70,7 @@ export default function App() {
       const roomParam = params.get('room');
       if (roomParam && !room) {
         const savedName = localStorage.getItem('playpulse_saved_name') || 'Player';
-        const savedChar = localStorage.getItem('playpulse_saved_character') || 'char_ironman';
+        const savedChar = localStorage.getItem('playpulse_saved_character') || getRandomCharacter().id;
         joinRoom(roomParam.toUpperCase().trim(), savedName, savedChar);
       }
     }
@@ -63,10 +86,21 @@ export default function App() {
     setIsChatOpen(!isChatOpen);
   };
 
+  const handleToggleVideoCall = async () => {
+    if (webRTC.isInCall) {
+      webRTC.leaveCall();
+    } else {
+      await webRTC.startCall(true);
+    }
+  };
+
   return (
-    <div className="relative min-h-screen bg-[#070913] text-zinc-100 flex flex-col selection:bg-purple-500 selection:text-white font-sans antialiased overflow-x-hidden">
+    <div className="relative w-full h-screen h-[100dvh] max-h-[100dvh] bg-[#070913] text-zinc-100 flex flex-col selection:bg-purple-500 selection:text-white font-sans antialiased overflow-hidden">
       {/* 3D Animated Particle & Polyhedra Background */}
       <BackgroundEffect />
+
+      {/* Floating Animated Reaction Bursts */}
+      <ReactionBurstOverlay bursts={reactionBursts} />
 
       {/* Project Custom Loader until server connection is established */}
       <ConnectingLoader
@@ -96,24 +130,35 @@ export default function App() {
           onAddBot={() => addBot()}
           onRemoveBot={(botId) => removeBot(botId)}
           onUpdateProfile={(name, charId) => updateProfile(name, charId)}
-          onLeaveRoom={() => leaveRoom()}
+          onLeaveRoom={() => {
+            if (webRTC.isInCall) webRTC.leaveCall();
+            leaveRoom();
+          }}
           onToggleChat={handleToggleChat}
           unreadChatCount={unreadChatCount}
+          isInCall={webRTC.isInCall}
+          onToggleVideoCall={handleToggleVideoCall}
         />
       )}
 
       {/* Screen 3: Active Game Arena */}
       {room && (room.gameStatus === 'playing' || room.gameStatus === 'game-over') && (
-        <div className="relative z-10 w-full min-h-screen flex flex-col justify-between">
+        <div className="relative z-10 w-full h-full max-h-full flex flex-col justify-between overflow-hidden">
           <GameHeader
             room={room}
             currentUserId={currentUserId}
-            onLeave={() => returnToLobby()}
+            onLeave={() => {
+              if (webRTC.isInCall) webRTC.leaveCall();
+              returnToLobby();
+            }}
             onToggleChat={handleToggleChat}
             unreadChatCount={unreadChatCount}
+            isInCall={webRTC.isInCall}
+            onToggleVideoCall={handleToggleVideoCall}
+            onTriggerReaction={(emoji) => sendReactionBurst(emoji)}
           />
 
-          <main className="flex-1 flex flex-col items-center justify-center p-2 sm:p-4 w-full">
+          <main className="flex-1 overflow-y-auto min-h-0 flex flex-col items-center justify-center p-2 sm:p-4 w-full">
             {room.currentGame === 'tic-tac-toe' && (
               <TicTacToeView
                 room={room}
@@ -165,7 +210,33 @@ export default function App() {
         </div>
       )}
 
-      {/* Real-time Room Chat Overlay */}
+      {/* Real-time Room Video Call HUD / Overlay */}
+      {room && (
+        <VideoCallOverlay
+          isInCall={webRTC.isInCall}
+          isAudioMuted={webRTC.isAudioMuted}
+          isVideoOff={webRTC.isVideoOff}
+          isScreenSharing={webRTC.isScreenSharing}
+          isSpeaking={webRTC.isSpeaking}
+          isMirrorMode={webRTC.isMirrorMode}
+          localStream={webRTC.localStream}
+          peers={webRTC.peers}
+          activeSpeakerId={webRTC.activeSpeakerId}
+          callLayout={webRTC.callLayout}
+          setCallLayout={webRTC.setCallLayout}
+          permissionError={webRTC.permissionError}
+          currentUserId={currentUserId}
+          players={room.players}
+          onStartCall={webRTC.startCall}
+          onLeaveCall={webRTC.leaveCall}
+          onToggleAudio={webRTC.toggleAudio}
+          onToggleVideo={webRTC.toggleVideo}
+          onToggleScreenShare={webRTC.toggleScreenShare}
+          onToggleMirror={webRTC.toggleMirrorMode}
+        />
+      )}
+
+      {/* Real-time Room Chat & Reactions Drawer */}
       {room && (
         <ChatOverlay
           isOpen={isChatOpen}
@@ -173,7 +244,17 @@ export default function App() {
           messages={room.chatMessages}
           players={room.players}
           currentUserId={currentUserId}
+          roomCode={room.code}
           onSendMessage={(text, isEmote) => sendChatMessage(text, isEmote)}
+          onSendReactionBurst={(emoji) => sendReactionBurst(emoji)}
+          isInCall={webRTC.isInCall}
+          isAudioMuted={webRTC.isAudioMuted}
+          isVideoOff={webRTC.isVideoOff}
+          onStartCall={webRTC.startCall}
+          onLeaveCall={webRTC.leaveCall}
+          onToggleAudio={webRTC.toggleAudio}
+          onToggleVideo={webRTC.toggleVideo}
+          connectedPeerCount={Object.keys(webRTC.peers).length}
         />
       )}
     </div>

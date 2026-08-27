@@ -16,6 +16,7 @@ import {
   Sparkles,
   Trash2,
   Users,
+  Video,
   Zap,
 } from 'lucide-react';
 import React, { useState } from 'react';
@@ -37,6 +38,9 @@ interface RoomLobbyProps {
   onLeaveRoom: () => void;
   onToggleChat: () => void;
   unreadChatCount?: number;
+  // Video call
+  isInCall?: boolean;
+  onToggleVideoCall?: () => void;
 }
 
 export const RoomLobby: React.FC<RoomLobbyProps> = ({
@@ -51,6 +55,8 @@ export const RoomLobby: React.FC<RoomLobbyProps> = ({
   onLeaveRoom,
   onToggleChat,
   unreadChatCount = 0,
+  isInCall = false,
+  onToggleVideoCall,
 }) => {
   const [copied, setCopied] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
@@ -90,9 +96,9 @@ export const RoomLobby: React.FC<RoomLobbyProps> = ({
   const canStartMatch = isHost && isPlayerCountValid && allNonHostsReady;
 
   return (
-    <div className="relative z-10 w-full min-h-screen flex flex-col justify-between p-4 sm:p-6 lg:p-8 max-w-6xl mx-auto space-y-6">
-      {/* Top Lobby Bento Bar */}
-      <header className="w-full flex items-center justify-between p-3.5 sm:p-4 rounded-2xl bg-[#0C101C]/90 border border-[#1A2238] shadow-lg backdrop-blur-md">
+    <div className="relative z-10 w-full h-full max-h-full flex flex-col justify-between p-3 sm:p-4 lg:p-6 max-w-6xl mx-auto overflow-hidden">
+      {/* Top Lobby Bento Bar (Fixed at top) */}
+      <header className="flex-shrink-0 w-full flex items-center justify-between p-3.5 sm:p-4 rounded-2xl bg-[#0C101C]/95 border border-[#1A2238] shadow-2xl backdrop-blur-xl mb-3 sm:mb-4">
         <div className="flex items-center gap-3">
           <button
             onClick={onLeaveRoom}
@@ -145,6 +151,28 @@ export const RoomLobby: React.FC<RoomLobbyProps> = ({
             )}
           </button>
 
+          {/* Video Call Quick Launch */}
+          {onToggleVideoCall && (
+            <button
+              onClick={onToggleVideoCall}
+              id="btn-lobby-video-call"
+              className={`relative p-2.5 rounded-xl border transition-all shadow-md cursor-pointer ${
+                isInCall
+                  ? 'bg-emerald-600/20 border-emerald-500/50 text-emerald-400 shadow-[0_0_15px_rgba(16,185,129,0.3)]'
+                  : 'bg-[#111627] hover:bg-[#182035] border-[#1E263D] text-zinc-300 hover:text-white'
+              }`}
+              title={isInCall ? 'Video Call (Active)' : 'Start Video & Voice Call'}
+            >
+              <Video className="w-4 h-4" />
+              {isInCall && (
+                <span className="absolute -top-1 -right-1 flex h-2.5 w-2.5">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                  <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500" />
+                </span>
+              )}
+            </button>
+          )}
+
           {/* Chat Toggle */}
           <button
             onClick={onToggleChat}
@@ -162,8 +190,10 @@ export const RoomLobby: React.FC<RoomLobbyProps> = ({
         </div>
       </header>
 
-      {/* Main Bento Grid: Players on Left, Game Selector on Right */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 w-full my-auto">
+      {/* Center Scrollable Content Area ONLY */}
+      <main className="flex-1 overflow-y-auto min-h-0 space-y-4 sm:space-y-6 pr-1 sm:pr-2 pb-2">
+        {/* Main Bento Grid: Players on Left, Game Selector on Right */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 w-full my-auto">
         {/* Left Bento Box: Player Roster & Bot Management (5 cols) */}
         <div className="lg:col-span-5 rounded-3xl bg-[#0C101C]/90 border border-[#1A2238] p-5 sm:p-6 flex flex-col justify-between shadow-xl backdrop-blur-md space-y-4">
           <div>
@@ -382,9 +412,10 @@ export const RoomLobby: React.FC<RoomLobbyProps> = ({
           )}
         </div>
       </div>
+      </main>
 
-      {/* Footer Info */}
-      <footer className="w-full text-center text-xs text-zinc-500 py-3 border-t border-[#1A2238]/60 flex flex-col sm:flex-row items-center justify-between gap-2 px-2">
+      {/* Pinned Footer (Fixed bottom, never scrolls) */}
+      <footer className="flex-shrink-0 mt-2 sm:mt-3 w-full text-center text-xs text-zinc-400 py-2.5 sm:py-3 px-4 rounded-xl sm:rounded-2xl bg-[#080B15]/95 backdrop-blur-xl border border-[#1A2238]/80 shadow-[0_-10px_30px_rgba(0,0,0,0.8)] flex flex-col sm:flex-row items-center justify-between gap-2">
         <span>PlayPulse Arena • Real-Time Bento Lobby</span>
         <span className="text-zinc-400 font-medium">
           Made with ❤️ and AI by <strong className="text-purple-400 font-bold">Rutvik Barot</strong>

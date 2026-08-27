@@ -200,7 +200,7 @@ export const MiniRacingView: React.FC<MiniRacingViewProps> = ({
         for (const pid of Object.keys(state.racers)) {
           const racer = state.racers[pid];
           const player = room.players.find((p) => p.id === pid);
-          const char = getCharacterById(player?.characterId || 'char_ironman');
+          const char = getCharacterById(player?.characterId || 'char_arjuna');
           const isMe = pid === currentUserId;
 
           ctx.save();

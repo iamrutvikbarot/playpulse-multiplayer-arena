@@ -79,7 +79,7 @@ export class RoomManager {
       const hostPlayer: Player = {
         id: player.id || `p_${Date.now().toString(36)}`,
         name: (player.name || 'Host').slice(0, 16).trim(),
-        characterId: player.characterId || 'char_ironman',
+        characterId: player.characterId || 'char_krishna',
         isHost: true,
         isReady: true,
         isConnected: true,
@@ -167,7 +167,7 @@ export class RoomManager {
         const newPlayer: Player = {
           id: player.id || `p_${Date.now().toString(36)}_${Math.random().toString(36).substring(2, 5)}`,
           name: playerName,
-          characterId: player.characterId || 'char_wizard',
+          characterId: player.characterId || 'char_arjuna',
           isHost: room.players.length === 0,
           isReady: false,
           isConnected: true,
@@ -230,8 +230,30 @@ export class RoomManager {
       const room = this.rooms.get(roomCode);
       if (!room || room.players.length >= room.settings.maxPlayers) return;
 
-      const botNames = ['StarkBot', 'WebBot', 'ShieldBot', 'ThunderBot', 'GammaBot', 'PantherBot'];
-      const botChars = ['char_ironman', 'char_spiderman', 'char_cap', 'char_thor', 'char_hulk', 'char_panther'];
+      const botNames = [
+        'Arjuna-AI',
+        'Karna-AI',
+        'Bhishma-AI',
+        'Duryodhana-AI',
+        'Draupadi-AI',
+        'Bheema-AI',
+        'Shakuni-AI',
+        'Drona-AI',
+        'Ashwatthama-AI',
+        'Krishna-Guide',
+      ];
+      const botChars = [
+        'char_arjuna',
+        'char_karna',
+        'char_bhishma',
+        'char_duryodhana',
+        'char_draupadi',
+        'char_bheema',
+        'char_shakuni',
+        'char_drona',
+        'char_ashwatthama',
+        'char_krishna',
+      ];
       const usedNames = room.players.map((p) => p.name);
       const name = botNames.find((n) => !usedNames.includes(n)) || `Bot-${room.players.length + 1}`;
       const charId = botChars[room.players.length % botChars.length];
@@ -390,14 +412,87 @@ export class RoomManager {
         };
 
         room.chatMessages.push(chatMsg);
-        if (room.chatMessages.length > 50) room.chatMessages.shift();
+        if (room.chatMessages.length > 60) room.chatMessages.shift();
 
         this.broadcastRoom(roomCode);
       }
       return;
     }
 
-    // 13. LEAVE ROOM
+    // 13. REACTION BURST (Real-time on-screen animated barrage)
+    if (msg.type === 'REACTION_BURST') {
+      const { roomCode, emoji, senderName, characterId, x } = msg.payload || {};
+      const room = this.rooms.get(roomCode);
+      if (!room) return;
+
+      const burstPayload = {
+        id: `burst_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+        emoji: emoji || '🔥',
+        senderName: senderName || 'Player',
+        characterId: characterId || '',
+        timestamp: Date.now(),
+        x: typeof x === 'number' ? x : Math.floor(Math.random() * 60) + 20,
+      };
+
+      // Broadcast burst to everyone in the room
+      room.players.forEach((p) => {
+        if (p.isBot) return;
+        const sock = this.playerSockets.get(p.id);
+        if (sock && sock.readyState === WebSocket.OPEN) {
+          this.send(sock, {
+            type: 'REACTION_BURST',
+            payload: burstPayload,
+          });
+        }
+      });
+      return;
+    }
+
+    // 14. WEBRTC SIGNALING (Offers, Answers, ICE Candidates)
+    if (msg.type === 'WEBRTC_SIGNAL') {
+      const { targetId, signal, roomCode } = msg.payload || {};
+      if (targetId) {
+        const targetSocket = this.playerSockets.get(targetId);
+        if (targetSocket && targetSocket.readyState === WebSocket.OPEN) {
+          this.send(targetSocket, {
+            type: 'WEBRTC_SIGNAL',
+            senderId: msg.senderId || conn.playerId,
+            payload: {
+              senderId: msg.senderId || conn.playerId,
+              roomCode,
+              signal,
+            },
+          });
+        }
+      }
+      return;
+    }
+
+    // 15. WEBRTC CALL PARTICIPATION (Join / Leave / Media State)
+    if (msg.type === 'WEBRTC_JOIN_CALL' || msg.type === 'WEBRTC_LEAVE_CALL' || msg.type === 'MEDIA_STATE_UPDATE') {
+      const { roomCode } = msg.payload || {};
+      const room = this.rooms.get(roomCode);
+      if (!room) return;
+
+      // Broadcast to other room peers
+      room.players.forEach((p) => {
+        if (p.isBot || p.id === conn.playerId) return;
+        const sock = this.playerSockets.get(p.id);
+        if (sock && sock.readyState === WebSocket.OPEN) {
+          this.send(sock, {
+            type: msg.type,
+            senderId: conn.playerId,
+            payload: {
+              ...msg.payload,
+              senderId: conn.playerId,
+            },
+          });
+        }
+      });
+      return;
+    }
+
+    // 16. LEAVE ROOM
     if (msg.type === 'ROOM_LEAVE') {
       const { roomCode, playerId } = msg.payload || {};
       const targetRoomCode = roomCode || conn.roomCode;

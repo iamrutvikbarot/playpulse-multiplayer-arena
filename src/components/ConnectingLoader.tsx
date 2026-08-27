@@ -12,7 +12,7 @@ const LOADING_STEPS = [
   'Initializing PlayPulse Arc Matrix...',
   'Connecting to Real-time Game Server...',
   'Calibrating Sub-50ms WebSocket Channel...',
-  'Synchronizing Marvel Hero Roster...',
+  'Synchronizing Character Roster...',
   'Entering Multiplayer Arena...',
 ];
 

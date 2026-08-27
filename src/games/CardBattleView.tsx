@@ -143,9 +143,9 @@ export const CardBattleView: React.FC<CardBattleViewProps> = ({
     const colorInfo = COLOR_MAP[card.color] || COLOR_MAP.red;
 
     const sizeClasses = {
-      sm: 'w-14 h-20 rounded-lg p-1.5 text-[9px]',
-      md: 'w-20 h-30 sm:w-22 sm:h-34 rounded-xl p-2 text-xs',
-      lg: 'w-28 h-42 sm:w-32 sm:h-48 rounded-2xl p-3 text-sm',
+      sm: 'w-12 h-18 sm:w-14 sm:h-20 rounded-lg p-1 text-[8px] sm:text-[9px]',
+      md: 'w-16 h-24 sm:w-20 sm:h-30 rounded-xl p-1.5 sm:p-2 text-[10px] sm:text-xs',
+      lg: 'w-22 h-32 sm:w-28 sm:h-42 rounded-xl sm:rounded-2xl p-2 sm:p-3 text-xs sm:text-sm',
     }[size];
 
     const centerSymbol =
@@ -233,7 +233,7 @@ export const CardBattleView: React.FC<CardBattleViewProps> = ({
   return (
     <div className="flex-1 flex flex-col items-center justify-between p-2 sm:p-4 max-w-5xl mx-auto w-full select-none" id="uno-game-arena">
       {/* Top Header: Opponent Status Bento Bar */}
-      <div className="w-full flex items-center justify-center gap-2 sm:gap-4 overflow-x-auto py-2 px-1">
+      <div className="w-full flex items-center justify-start sm:justify-center gap-2 sm:gap-4 overflow-x-auto py-2 px-1 scrollbar-none">
         {room.players.map((p: Player) => {
           const isMe = p.id === currentUserId;
           const isTurn = state.currentTurnPlayerId === p.id;
@@ -243,7 +243,7 @@ export const CardBattleView: React.FC<CardBattleViewProps> = ({
           return (
             <div
               key={p.id}
-              className={`flex items-center gap-2.5 px-3 py-2 rounded-2xl border transition-all ${
+              className={`flex-shrink-0 flex items-center gap-2 sm:gap-2.5 px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-2xl border transition-all ${
                 isTurn
                   ? 'bg-[#182038] border-amber-400 shadow-[0_0_20px_rgba(245,158,11,0.35)] scale-105 ring-2 ring-amber-400/40'
                   : 'bg-[#0C101C] border-[#1A2238] opacity-80'
@@ -252,7 +252,7 @@ export const CardBattleView: React.FC<CardBattleViewProps> = ({
               <CharacterAvatar characterId={p.characterId} size="sm" isHost={p.isHost} animate={isTurn} />
               <div>
                 <div className="flex items-center gap-1.5">
-                  <span className="text-xs font-bold text-white truncate max-w-[85px]">
+                  <span className="text-xs font-bold text-white truncate max-w-[70px] sm:max-w-[85px]">
                     {p.name}
                   </span>
                   {isMe && (
@@ -262,7 +262,7 @@ export const CardBattleView: React.FC<CardBattleViewProps> = ({
                   )}
                 </div>
 
-                <div className="flex items-center gap-1.5 text-[11px] text-zinc-400 font-bold mt-0.5">
+                <div className="flex items-center gap-1.5 text-[10px] sm:text-[11px] text-zinc-400 font-bold mt-0.5">
                   <Layers className="w-3 h-3 text-purple-400" />
                   <span>{cardCount} cards</span>
                   {cardCount === 1 && (
@@ -278,7 +278,7 @@ export const CardBattleView: React.FC<CardBattleViewProps> = ({
       </div>
 
       {/* Center Table Felt: Draw Pile, Discard Pile & Active Color Indicator */}
-      <div className="my-auto w-full max-w-2xl bg-[#090C16] border-2 border-[#1A2238] rounded-3xl p-4 sm:p-6 shadow-2xl flex flex-col items-center gap-5 relative overflow-hidden">
+      <div className="my-auto w-full max-w-2xl bg-[#090C16] border-2 border-[#1A2238] rounded-2xl sm:rounded-3xl p-3 sm:p-6 shadow-2xl flex flex-col items-center gap-3 sm:gap-5 relative overflow-hidden">
         {/* Ambient Active Color Radial Background */}
         <div
           className="absolute inset-0 opacity-15 pointer-events-none transition-all duration-700 blur-3xl"
@@ -286,10 +286,10 @@ export const CardBattleView: React.FC<CardBattleViewProps> = ({
         />
 
         {/* Turn & Status Bar */}
-        <div className="flex items-center justify-between w-full z-10">
+        <div className="flex flex-wrap items-center justify-between gap-2 w-full z-10">
           <div className="flex items-center gap-2">
             <span
-              className={`px-3 py-1 rounded-full text-xs font-black uppercase font-display flex items-center gap-1.5 shadow-md ${
+              className={`px-2.5 sm:px-3 py-0.5 sm:py-1 rounded-full text-[11px] sm:text-xs font-black uppercase font-display flex items-center gap-1.5 shadow-md ${
                 isMyTurn
                   ? 'bg-emerald-500 text-black animate-pulse'
                   : 'bg-[#141A2E] text-zinc-300 border border-[#1E263D]'
@@ -300,11 +300,11 @@ export const CardBattleView: React.FC<CardBattleViewProps> = ({
 
             {/* Rotation Direction */}
             <div
-              className="flex items-center gap-1 text-[11px] font-bold text-zinc-400 bg-[#0C101C] border border-[#1A2238] px-2.5 py-1 rounded-full"
+              className="flex items-center gap-1 text-[10px] sm:text-[11px] font-bold text-zinc-400 bg-[#0C101C] border border-[#1A2238] px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-full"
               title={`Play direction: ${state.direction === 1 ? 'Clockwise' : 'Counter-Clockwise'}`}
             >
               <RotateCw
-                className={`w-3.5 h-3.5 text-purple-400 transition-transform duration-500 ${
+                className={`w-3 h-3 sm:w-3.5 sm:h-3.5 text-purple-400 transition-transform duration-500 ${
                   state.direction === -1 ? '-scale-x-100' : ''
                 }`}
               />
@@ -313,10 +313,10 @@ export const CardBattleView: React.FC<CardBattleViewProps> = ({
           </div>
 
           {/* Active Match Color Pill */}
-          <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-[#0C101C] border border-[#1A2238] text-xs font-extrabold text-white shadow">
+          <div className="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-0.5 sm:py-1 rounded-full bg-[#0C101C] border border-[#1A2238] text-[11px] sm:text-xs font-extrabold text-white shadow">
             <span>Color:</span>
             <div
-              className="w-4 h-4 rounded-full shadow-[0_0_8px_rgba(255,255,255,0.4)] border border-white/50"
+              className="w-3.5 h-3.5 sm:w-4 sm:h-4 rounded-full shadow-[0_0_8px_rgba(255,255,255,0.4)] border border-white/50"
               style={{ backgroundColor: activeColorTheme.hex }}
             />
             <span style={{ color: activeColorTheme.lightHex }}>{activeColorTheme.name}</span>
@@ -324,42 +324,42 @@ export const CardBattleView: React.FC<CardBattleViewProps> = ({
         </div>
 
         {/* Piles Center Area */}
-        <div className="flex items-center justify-center gap-8 sm:gap-12 z-10 py-2">
+        <div className="flex items-center justify-center gap-5 sm:gap-12 z-10 py-1 sm:py-2">
           {/* Draw Pile (Authentic UNO Face-Down Card) */}
-          <div className="flex flex-col items-center gap-2">
+          <div className="flex flex-col items-center gap-1.5 sm:gap-2">
             <button
               onClick={handleDrawCard}
               disabled={!isMyTurn}
               id="btn-uno-draw-pile"
-              className={`relative w-24 h-36 sm:w-28 sm:h-42 rounded-2xl bg-black border-2 border-red-500/80 flex flex-col items-center justify-center p-3 shadow-2xl transition-all ${
+              className={`relative w-20 h-30 sm:w-28 sm:h-42 rounded-xl sm:rounded-2xl bg-black border-2 border-red-500/80 flex flex-col items-center justify-center p-2 sm:p-3 shadow-2xl transition-all ${
                 isMyTurn
-                  ? 'hover:scale-105 hover:border-amber-400 ring-4 ring-amber-400/50 cursor-pointer shadow-[0_0_20px_rgba(245,158,11,0.4)] animate-pulse'
+                  ? 'hover:scale-105 hover:border-amber-400 ring-3 sm:ring-4 ring-amber-400/50 cursor-pointer shadow-[0_0_20px_rgba(245,158,11,0.4)] animate-pulse'
                   : 'opacity-70 cursor-not-allowed'
               }`}
             >
               {/* Card Back UNO Oval */}
               <div className="w-[85%] h-[60%] bg-[#EF4444] rounded-full border-2 border-white flex items-center justify-center -rotate-25 shadow-inner">
-                <span className="font-display font-black text-amber-300 text-xl tracking-tighter drop-shadow-md">
+                <span className="font-display font-black text-amber-300 text-sm sm:text-xl tracking-tighter drop-shadow-md">
                   UNO
                 </span>
               </div>
-              <span className="text-[10px] font-black text-zinc-400 font-mono mt-2">
+              <span className="text-[9px] sm:text-[10px] font-black text-zinc-400 font-mono mt-1 sm:mt-2">
                 DRAW ({state.drawPileCount})
               </span>
             </button>
-            <span className="text-[11px] font-bold text-zinc-400">Draw Pile</span>
+            <span className="text-[10px] sm:text-[11px] font-bold text-zinc-400">Draw Pile</span>
           </div>
 
           {/* Discard Pile (Top Played Card) */}
-          <div className="flex flex-col items-center gap-2">
+          <div className="flex flex-col items-center gap-1.5 sm:gap-2">
             {state.discardTopCard ? (
               renderUnoCard(state.discardTopCard, false, false, 'lg')
             ) : (
-              <div className="w-28 h-42 rounded-2xl bg-zinc-900 border-2 border-dashed border-zinc-700 flex items-center justify-center text-xs text-zinc-500">
+              <div className="w-20 h-30 sm:w-28 sm:h-42 rounded-xl sm:rounded-2xl bg-zinc-900 border-2 border-dashed border-zinc-700 flex items-center justify-center text-xs text-zinc-500">
                 Empty
               </div>
             )}
-            <span className="text-[11px] font-bold text-zinc-400">Discard Pile</span>
+            <span className="text-[10px] sm:text-[11px] font-bold text-zinc-400">Discard Pile</span>
           </div>
         </div>
       </div>

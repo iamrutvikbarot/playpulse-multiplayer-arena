@@ -240,20 +240,20 @@ export const LudoView: React.FC<LudoViewProps> = ({
       </div>
 
       {/* Main Board Arena Container */}
-      <div className="w-full flex-1 flex flex-col lg:flex-row items-center justify-center gap-4 my-3">
+      <div className="w-full flex-1 flex flex-col lg:flex-row items-center justify-center gap-4 my-2 sm:my-3">
         {/* Authentic 15x15 Ludo Board Grid */}
         <div
-          className="relative w-full max-w-[460px] sm:max-w-[500px] aspect-square bg-[#080B14] border-2 border-[#1E263D] rounded-3xl p-2 sm:p-3 shadow-[0_0_40px_rgba(0,0,0,0.8)] overflow-hidden"
+          className="relative w-full max-w-[min(94vw,440px)] sm:max-w-[460px] aspect-square bg-[#080B14] border-2 border-[#1E263D] rounded-2xl sm:rounded-3xl p-1.5 sm:p-3 shadow-[0_0_40px_rgba(0,0,0,0.8)] overflow-hidden"
           id="ludo-board-grid-container"
         >
           {/* Inner 15x15 SVG/Grid Matrix */}
-          <div className="relative w-full h-full grid grid-cols-15 grid-rows-15 bg-[#090C16] border border-[#161D30] rounded-2xl overflow-hidden">
+          <div className="relative w-full h-full grid grid-cols-15 grid-rows-15 bg-[#090C16] border border-[#161D30] rounded-xl sm:rounded-2xl overflow-hidden">
             {/* 1. TOP-LEFT: Green Yard (6x6: r0..5, c0..5) */}
             <div
-              className="absolute top-0 left-0 w-[40%] h-[40%] rounded-tl-2xl p-2 flex items-center justify-center border-b-2 border-r-2 border-[#161D30]"
+              className="absolute top-0 left-0 w-[40%] h-[40%] rounded-tl-xl sm:rounded-tl-2xl p-1.5 sm:p-2 flex items-center justify-center border-b-2 border-r-2 border-[#161D30]"
               style={{ backgroundColor: COLOR_CONFIG.green.bgHex }}
             >
-              <div className="w-full h-full bg-[#0C101C] rounded-xl border border-emerald-500/40 p-2 grid grid-cols-2 grid-rows-2 gap-2 shadow-inner">
+              <div className="w-full h-full bg-[#0C101C] rounded-lg sm:rounded-xl border border-emerald-500/40 p-1.5 sm:p-2 grid grid-cols-2 grid-rows-2 gap-1.5 sm:gap-2 shadow-inner">
                 {[0, 1, 2, 3].map((idx) => (
                   <div
                     key={idx}
@@ -265,10 +265,10 @@ export const LudoView: React.FC<LudoViewProps> = ({
 
             {/* 2. TOP-RIGHT: Yellow Yard (6x6: r0..5, c9..14) */}
             <div
-              className="absolute top-0 right-0 w-[40%] h-[40%] rounded-tr-2xl p-2 flex items-center justify-center border-b-2 border-l-2 border-[#161D30]"
+              className="absolute top-0 right-0 w-[40%] h-[40%] rounded-tr-xl sm:rounded-tr-2xl p-1.5 sm:p-2 flex items-center justify-center border-b-2 border-l-2 border-[#161D30]"
               style={{ backgroundColor: COLOR_CONFIG.yellow.bgHex }}
             >
-              <div className="w-full h-full bg-[#0C101C] rounded-xl border border-amber-500/40 p-2 grid grid-cols-2 grid-rows-2 gap-2 shadow-inner">
+              <div className="w-full h-full bg-[#0C101C] rounded-lg sm:rounded-xl border border-amber-500/40 p-1.5 sm:p-2 grid grid-cols-2 grid-rows-2 gap-1.5 sm:gap-2 shadow-inner">
                 {[0, 1, 2, 3].map((idx) => (
                   <div
                     key={idx}
@@ -280,10 +280,10 @@ export const LudoView: React.FC<LudoViewProps> = ({
 
             {/* 3. BOTTOM-LEFT: Red Yard (6x6: r9..14, c0..5) */}
             <div
-              className="absolute bottom-0 left-0 w-[40%] h-[40%] rounded-bl-2xl p-2 flex items-center justify-center border-t-2 border-r-2 border-[#161D30]"
+              className="absolute bottom-0 left-0 w-[40%] h-[40%] rounded-bl-xl sm:rounded-bl-2xl p-1.5 sm:p-2 flex items-center justify-center border-t-2 border-r-2 border-[#161D30]"
               style={{ backgroundColor: COLOR_CONFIG.red.bgHex }}
             >
-              <div className="w-full h-full bg-[#0C101C] rounded-xl border border-red-500/40 p-2 grid grid-cols-2 grid-rows-2 gap-2 shadow-inner">
+              <div className="w-full h-full bg-[#0C101C] rounded-lg sm:rounded-xl border border-red-500/40 p-1.5 sm:p-2 grid grid-cols-2 grid-rows-2 gap-1.5 sm:gap-2 shadow-inner">
                 {[0, 1, 2, 3].map((idx) => (
                   <div
                     key={idx}
@@ -295,10 +295,10 @@ export const LudoView: React.FC<LudoViewProps> = ({
 
             {/* 4. BOTTOM-RIGHT: Blue Yard (6x6: r9..14, c9..14) */}
             <div
-              className="absolute bottom-0 right-0 w-[40%] h-[40%] rounded-br-2xl p-2 flex items-center justify-center border-t-2 border-l-2 border-[#161D30]"
+              className="absolute bottom-0 right-0 w-[40%] h-[40%] rounded-br-xl sm:rounded-br-2xl p-1.5 sm:p-2 flex items-center justify-center border-t-2 border-l-2 border-[#161D30]"
               style={{ backgroundColor: COLOR_CONFIG.blue.bgHex }}
             >
-              <div className="w-full h-full bg-[#0C101C] rounded-xl border border-blue-500/40 p-2 grid grid-cols-2 grid-rows-2 gap-2 shadow-inner">
+              <div className="w-full h-full bg-[#0C101C] rounded-lg sm:rounded-xl border border-blue-500/40 p-1.5 sm:p-2 grid grid-cols-2 grid-rows-2 gap-1.5 sm:gap-2 shadow-inner">
                 {[0, 1, 2, 3].map((idx) => (
                   <div
                     key={idx}
@@ -322,8 +322,8 @@ export const LudoView: React.FC<LudoViewProps> = ({
                 <polygon points="0,100 0,0 50,50" fill="#EF4444" fillOpacity="0.85" />
               </svg>
               {/* Trophy In Center */}
-              <div className="absolute w-6 h-6 rounded-full bg-slate-900/90 border border-amber-300 flex items-center justify-center shadow-lg">
-                <Trophy className="w-3.5 h-3.5 text-amber-400 fill-amber-400" />
+              <div className="absolute w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-slate-900/90 border border-amber-300 flex items-center justify-center shadow-lg">
+                <Trophy className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-amber-400 fill-amber-400" />
               </div>
             </div>
 
@@ -395,7 +395,7 @@ export const LudoView: React.FC<LudoViewProps> = ({
                   >
                     {isSafeTile && (
                       <Star
-                        className="w-2.5 h-2.5 opacity-80"
+                        className="w-2 sm:w-2.5 h-2 sm:h-2.5 opacity-80"
                         style={{ color: starColor, fill: starColor }}
                       />
                     )}
@@ -426,14 +426,14 @@ export const LudoView: React.FC<LudoViewProps> = ({
                     disabled={!isMovable}
                     className={`absolute z-20 -translate-x-1/2 -translate-y-1/2 rounded-full flex items-center justify-center transition-all duration-300 shadow-lg ${
                       isMovable
-                        ? 'cursor-pointer scale-125 ring-4 ring-amber-400 animate-bounce'
+                        ? 'cursor-pointer scale-125 ring-3 sm:ring-4 ring-amber-400 animate-bounce'
                         : 'cursor-default'
                     }`}
                     style={{
                       left: `${leftPct + 100 / 30}%`,
                       top: `${topPct + 100 / 30}%`,
-                      width: '5.2%',
-                      height: '5.2%',
+                      width: '5.4%',
+                      height: '5.4%',
                       backgroundColor: theme.hex,
                       borderColor: '#FFFFFF',
                       borderWidth: '1.5px',
@@ -441,7 +441,7 @@ export const LudoView: React.FC<LudoViewProps> = ({
                     }}
                     title={`${color} Token ${token.id + 1} (${token.step === -1 ? 'Yard' : token.step === 57 ? 'Finish' : `Step ${token.step}`})`}
                   >
-                    <span className="text-[9px] font-black text-white drop-shadow">
+                    <span className="text-[8px] sm:text-[9px] font-black text-white drop-shadow">
                       {token.step === 57 ? '👑' : token.id + 1}
                     </span>
                   </button>
@@ -458,7 +458,7 @@ export const LudoView: React.FC<LudoViewProps> = ({
               <Users className="w-3.5 h-3.5 text-purple-400" /> Active Players
             </h3>
 
-            <div className="space-y-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-2">
               {state.colorOrder.map((color) => {
                 const player = room.players.find((p) => state.playerColors[p.id] === color);
                 const tokens = state.tokens[color] || [];
@@ -469,7 +469,7 @@ export const LudoView: React.FC<LudoViewProps> = ({
                 return (
                   <div
                     key={color}
-                    className={`p-2.5 rounded-xl border transition-all ${
+                    className={`p-2 sm:p-2.5 rounded-xl border transition-all ${
                       isCurrentTurn
                         ? 'bg-[#141A2E] border-white/60 shadow-[0_0_15px_rgba(255,255,255,0.15)]'
                         : 'bg-[#090C16] border-[#161D30]'
@@ -486,7 +486,7 @@ export const LudoView: React.FC<LudoViewProps> = ({
                         )}
                         <div>
                           <div className="flex items-center gap-1.5">
-                            <span className="text-xs font-bold text-white truncate max-w-[100px]">
+                            <span className="text-xs font-bold text-white truncate max-w-[90px] sm:max-w-[100px]">
                               {player ? player.name : 'Waiting...'}
                             </span>
                             {player?.id === currentUserId && (
@@ -514,7 +514,7 @@ export const LudoView: React.FC<LudoViewProps> = ({
                     </div>
 
                     {/* Token Mini-Indicator Bar */}
-                    <div className="grid grid-cols-4 gap-1.5 mt-2 pt-2 border-t border-[#161D30]">
+                    <div className="grid grid-cols-4 gap-1 sm:gap-1.5 mt-2 pt-2 border-t border-[#161D30]">
                       {tokens.map((token) => {
                         const isMovable =
                           isMyTurn && color === myColor && state.movableTokenIds.includes(token.id);
