@@ -172,24 +172,6 @@ export const LandingPage: React.FC<LandingPageProps> = ({
 
       {/* Center Scrollable Content Area ONLY */}
       <main className="flex-1 overflow-y-auto min-h-0 space-y-4 sm:space-y-6 pr-1 sm:pr-2 pb-2">
-        {/* Error Alert if any */}
-        {error && (
-          <div className="w-full p-4 rounded-2xl bg-red-950/80 border border-red-500/50 text-red-200 text-xs font-semibold flex items-center justify-between shadow-lg">
-            <div className="flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-red-400 animate-ping" />
-              <span>{error}</span>
-            </div>
-            {onClearError && (
-              <button
-                onClick={onClearError}
-                className="px-2.5 py-1 rounded-lg bg-red-900/60 hover:bg-red-800/80 text-red-200 text-xs font-bold transition-colors cursor-pointer"
-              >
-                Dismiss
-              </button>
-            )}
-          </div>
-        )}
-
         {/* Bento Grid Main Section */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-6 w-full">
         {/* Bento Box 1: Hero & Room Launchpad (col-span-8) */}

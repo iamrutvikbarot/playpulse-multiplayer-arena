@@ -5,6 +5,7 @@ import { ConnectingLoader } from './components/ConnectingLoader';
 import { GameHeader } from './components/GameHeader';
 import { GameResultModal } from './components/GameResultModal';
 import { ReactionBurstOverlay } from './components/ReactionBurstOverlay';
+import { ToastNotification } from './components/ToastNotification';
 import { VideoCallOverlay } from './components/VideoCallOverlay';
 import { CardBattleView } from './games/CardBattleView';
 import { LudoView } from './games/LudoView';
@@ -101,6 +102,9 @@ export default function App() {
 
       {/* Floating Animated Reaction Bursts */}
       <ReactionBurstOverlay bursts={reactionBursts} />
+
+      {/* Floating Toast Notifications */}
+      <ToastNotification message={error} onClose={clearError} />
 
       {/* Project Custom Loader until server connection is established */}
       <ConnectingLoader
