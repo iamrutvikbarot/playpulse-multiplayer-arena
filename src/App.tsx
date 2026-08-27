@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { BackgroundEffect } from './components/BackgroundEffect';
 import { ChatOverlay } from './components/ChatOverlay';
 import { ConnectingLoader } from './components/ConnectingLoader';
@@ -65,11 +65,13 @@ export default function App() {
   }, [registerSignalingHandler, webRTC.handleSignalingMessage]);
 
   // Check URL query parameters for auto-room join
+  const joinedParamRef = useRef<string | null>(null);
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const params = new URLSearchParams(window.location.search);
       const roomParam = params.get('room');
-      if (roomParam && !room) {
+      if (roomParam && !room && joinedParamRef.current !== roomParam) {
+        joinedParamRef.current = roomParam;
         const savedName = localStorage.getItem('playpulse_saved_name') || 'Player';
         const savedChar = localStorage.getItem('playpulse_saved_character') || getRandomCharacter().id;
         joinRoom(roomParam.toUpperCase().trim(), savedName, savedChar);

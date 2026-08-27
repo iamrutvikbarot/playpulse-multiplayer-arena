@@ -44,6 +44,11 @@ export function useMultiplayer(): MultiplayerHook {
   const reconnectTimeoutRef = useRef<any>(null);
   const messageQueueRef = useRef<WSMessage[]>([]);
   const signalingHandlersRef = useRef<Set<(msg: WSMessage) => void>>(new Set());
+  const roomRef = useRef<RoomState | null>(null);
+
+  useEffect(() => {
+    roomRef.current = room;
+  }, [room]);
 
   // Ephemeral session ID stored in sessionStorage
   const [currentUserId] = useState<string>(() => {
@@ -96,10 +101,13 @@ export function useMultiplayer(): MultiplayerHook {
   const connectSocket = useCallback(() => {
     if (typeof window === 'undefined') return;
 
-    if (socketRef.current) {
-      try {
-        socketRef.current.close();
-      } catch (e) {}
+    // If socket is already open or currently opening, don't duplicate connection
+    if (
+      socketRef.current &&
+      (socketRef.current.readyState === WebSocket.OPEN ||
+        socketRef.current.readyState === WebSocket.CONNECTING)
+    ) {
+      return;
     }
 
     setConnecting(true);
@@ -239,12 +247,13 @@ export function useMultiplayer(): MultiplayerHook {
     }, 10000);
 
     const handleBeforeUnload = () => {
-      if (room && socketRef.current && socketRef.current.readyState === WebSocket.OPEN) {
+      const currentRoom = roomRef.current;
+      if (currentRoom && socketRef.current && socketRef.current.readyState === WebSocket.OPEN) {
         try {
           socketRef.current.send(
             JSON.stringify({
               type: 'ROOM_LEAVE',
-              payload: { roomCode: room.code, playerId: currentUserId },
+              payload: { roomCode: currentRoom.code, playerId: currentUserId },
               senderId: currentUserId,
             })
           );
@@ -262,7 +271,7 @@ export function useMultiplayer(): MultiplayerHook {
       if (reconnectTimeoutRef.current) clearTimeout(reconnectTimeoutRef.current);
       if (socketRef.current) socketRef.current.close();
     };
-  }, [connectSocket, room, currentUserId]);
+  }, [connectSocket, currentUserId]);
 
   const createRoom = useCallback(
     (playerName: string, characterId: string, initialGame: GameId = 'tic-tac-toe', settings?: Partial<RoomSettings>) => {

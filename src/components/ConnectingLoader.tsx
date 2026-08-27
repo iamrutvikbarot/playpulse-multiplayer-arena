@@ -24,10 +24,12 @@ export const ConnectingLoader: React.FC<ConnectingLoaderProps> = ({
 }) => {
   const [stepIndex, setStepIndex] = useState(0);
   const [progress, setProgress] = useState(15);
+  const [hasInitiallyConnected, setHasInitiallyConnected] = useState(false);
 
   useEffect(() => {
     if (connected) {
       setProgress(100);
+      setHasInitiallyConnected(true);
       return;
     }
 
@@ -45,7 +47,8 @@ export const ConnectingLoader: React.FC<ConnectingLoaderProps> = ({
     };
   }, [connected]);
 
-  if (connected && progress >= 100) {
+  // If already connected once, do not show the full screen splash screen
+  if (connected || hasInitiallyConnected) {
     return null;
   }
 
