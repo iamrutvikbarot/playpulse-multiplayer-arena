@@ -8,6 +8,9 @@ const ICE_SERVERS: RTCIceServer[] = [
   { urls: 'stun:stun2.l.google.com:19302' },
   { urls: 'stun:stun3.l.google.com:19302' },
   { urls: 'stun:stun4.l.google.com:19302' },
+  { urls: 'stun:global.stun.twilio.com:3478' },
+  { urls: 'stun:stun.cloudflare.com:3478' },
+  { urls: 'stun:stun.services.mozilla.com' },
 ];
 
 export interface PeerMediaInfo {
@@ -238,111 +241,115 @@ export function useWebRTC({ roomCode, currentUserId, players, sendMessage }: Use
   // Helper to create or get an RTCPeerConnection for a target peer
   const getOrCreatePeerConnection = useCallback(
     (targetUserId: string): RTCPeerConnection => {
-      if (peerConnectionsRef.current.has(targetUserId)) {
-        return peerConnectionsRef.current.get(targetUserId)!;
+      let pc = peerConnectionsRef.current.get(targetUserId);
+      if (!pc) {
+        console.log(`[WebRTC] Creating new RTCPeerConnection for ${targetUserId}`);
+        pc = new RTCPeerConnection({
+          iceServers: ICE_SERVERS,
+          iceCandidatePoolSize: 10,
+        });
+
+        // 1. Handle ICE Candidate generation
+        pc.onicecandidate = (event) => {
+          const code = roomCodeRef.current;
+          if (event.candidate && code) {
+            sendMessage({
+              type: 'WEBRTC_SIGNAL',
+              payload: {
+                roomCode: code,
+                targetId: targetUserId,
+                signal: {
+                  type: 'ice',
+                  candidate: event.candidate.toJSON(),
+                },
+              },
+            });
+          }
+        };
+
+        // 2. Handle incoming remote tracks
+        pc.ontrack = (event) => {
+          console.log(`[WebRTC] ontrack from peer ${targetUserId}:`, event.track.kind);
+          let stream = remoteStreamsRef.current.get(targetUserId);
+          if (!stream) {
+            stream = event.streams && event.streams[0] ? event.streams[0] : new MediaStream();
+          }
+
+          // Add track if not already in stream
+          if (!stream.getTracks().some((t) => t.id === event.track.id)) {
+            stream.addTrack(event.track);
+          }
+
+          // Recreate stream wrapper so React state recognizes the update
+          const updatedStream = new MediaStream(stream.getTracks());
+          remoteStreamsRef.current.set(targetUserId, updatedStream);
+
+          const hasVideo = updatedStream.getVideoTracks().length > 0;
+          const hasAudio = updatedStream.getAudioTracks().length > 0;
+
+          setPeers((prev) => {
+            const existing = prev[targetUserId];
+            return {
+              ...prev,
+              [targetUserId]: {
+                playerId: targetUserId,
+                stream: updatedStream,
+                isAudioOn: existing?.isAudioOn ?? hasAudio,
+                isVideoOn: existing?.isVideoOn ?? hasVideo,
+                isScreenSharing: existing?.isScreenSharing || false,
+                isSpeaking: false,
+                connectionState: pc.connectionState,
+              },
+            };
+          });
+
+          if (event.track.kind === 'audio') {
+            setupRemoteAudioAnalyser(targetUserId, updatedStream);
+          }
+        };
+
+        // 3. Connection state monitoring
+        pc.onconnectionstatechange = () => {
+          console.log(`[WebRTC] Connection state with ${targetUserId}:`, pc.connectionState);
+          setPeers((prev) => {
+            if (!prev[targetUserId]) return prev;
+            return {
+              ...prev,
+              [targetUserId]: {
+                ...prev[targetUserId],
+                connectionState: pc.connectionState,
+              },
+            };
+          });
+        };
+
+        pc.oniceconnectionstatechange = () => {
+          console.log(`[WebRTC] ICE connection state with ${targetUserId}:`, pc.iceConnectionState);
+          if (pc.iceConnectionState === 'failed') {
+            try {
+              pc.restartIce();
+            } catch (e) {}
+          }
+        };
+
+        peerConnectionsRef.current.set(targetUserId, pc);
       }
 
-      console.log(`[WebRTC] Creating new RTCPeerConnection for ${targetUserId}`);
-      const pc = new RTCPeerConnection({
-        iceServers: ICE_SERVERS,
-        iceCandidatePoolSize: 10,
-      });
-
-      // 1. Add existing local stream tracks to this PC
+      // Ensure local tracks are attached to this PC
       if (localStreamRef.current) {
+        const senders = pc.getSenders();
         localStreamRef.current.getTracks().forEach((track) => {
-          try {
-            pc.addTrack(track, localStreamRef.current!);
-          } catch (e) {
-            console.warn('[WebRTC] Error adding local track to PC:', e);
+          const hasSender = senders.some((s) => s.track && s.track.kind === track.kind);
+          if (!hasSender) {
+            try {
+              pc.addTrack(track, localStreamRef.current!);
+            } catch (e) {
+              console.warn('[WebRTC] Error adding local track to PC:', e);
+            }
           }
         });
       }
 
-      // 2. Handle ICE Candidate generation
-      pc.onicecandidate = (event) => {
-        const code = roomCodeRef.current;
-        if (event.candidate && code) {
-          sendMessage({
-            type: 'WEBRTC_SIGNAL',
-            payload: {
-              roomCode: code,
-              targetId: targetUserId,
-              signal: {
-                type: 'ice',
-                candidate: event.candidate.toJSON(),
-              },
-            },
-          });
-        }
-      };
-
-      // 3. Handle incoming remote tracks
-      pc.ontrack = (event) => {
-        console.log(`[WebRTC] ontrack from peer ${targetUserId}:`, event.track.kind);
-        let stream = remoteStreamsRef.current.get(targetUserId);
-        if (!stream) {
-          stream = event.streams && event.streams[0] ? event.streams[0] : new MediaStream();
-        }
-
-        // Add track if not already in stream
-        if (!stream.getTracks().some((t) => t.id === event.track.id)) {
-          stream.addTrack(event.track);
-        }
-
-        // Recreate stream wrapper so React state recognizes the update
-        const updatedStream = new MediaStream(stream.getTracks());
-        remoteStreamsRef.current.set(targetUserId, updatedStream);
-
-        const hasVideo = updatedStream.getVideoTracks().some((t) => t.enabled);
-        const hasAudio = updatedStream.getAudioTracks().some((t) => t.enabled);
-
-        setPeers((prev) => {
-          const existing = prev[targetUserId];
-          return {
-            ...prev,
-            [targetUserId]: {
-              playerId: targetUserId,
-              stream: updatedStream,
-              isAudioOn: hasAudio,
-              isVideoOn: hasVideo,
-              isScreenSharing: existing?.isScreenSharing || false,
-              isSpeaking: false,
-              connectionState: pc.connectionState,
-            },
-          };
-        });
-
-        if (event.track.kind === 'audio') {
-          setupRemoteAudioAnalyser(targetUserId, updatedStream);
-        }
-      };
-
-      // 4. Connection state monitoring
-      pc.onconnectionstatechange = () => {
-        console.log(`[WebRTC] Connection state with ${targetUserId}:`, pc.connectionState);
-        setPeers((prev) => {
-          if (!prev[targetUserId]) return prev;
-          return {
-            ...prev,
-            [targetUserId]: {
-              ...prev[targetUserId],
-              connectionState: pc.connectionState,
-            },
-          };
-        });
-      };
-
-      pc.oniceconnectionstatechange = () => {
-        console.log(`[WebRTC] ICE connection state with ${targetUserId}:`, pc.iceConnectionState);
-        if (pc.iceConnectionState === 'failed') {
-          try {
-            pc.restartIce();
-          } catch (e) {}
-        }
-      };
-
-      peerConnectionsRef.current.set(targetUserId, pc);
       return pc;
     },
     [sendMessage, setupRemoteAudioAnalyser]
@@ -436,6 +443,23 @@ export function useWebRTC({ roomCode, currentUserId, players, sendMessage }: Use
         sound.playCallJoin();
 
         setupAudioAnalyser(stream);
+
+        // Attach new local tracks to all existing peer connections
+        stream.getTracks().forEach((track) => {
+          peerConnectionsRef.current.forEach((pc) => {
+            const senders = pc.getSenders();
+            const existingSender = senders.find((s) => s.track?.kind === track.kind);
+            if (existingSender) {
+              existingSender.replaceTrack(track);
+            } else {
+              try {
+                pc.addTrack(track, stream);
+              } catch (e) {
+                console.warn('[WebRTC] addTrack error in startCall:', e);
+              }
+            }
+          });
+        });
 
         // Notify room that we joined call
         if (code) {
@@ -734,6 +758,21 @@ export function useWebRTC({ roomCode, currentUserId, players, sendMessage }: Use
             }
 
             await pc.setRemoteDescription(new RTCSessionDescription(signal.sdp));
+
+            // Ensure our local tracks are attached to this PC before creating the answer
+            if (localStreamRef.current) {
+              const senders = pc.getSenders();
+              localStreamRef.current.getTracks().forEach((track) => {
+                const hasSender = senders.some((s) => s.track && s.track.kind === track.kind);
+                if (!hasSender) {
+                  try {
+                    pc.addTrack(track, localStreamRef.current!);
+                  } catch (e) {
+                    console.warn('[WebRTC] Error adding local track on incoming offer:', e);
+                  }
+                }
+              });
+            }
 
             // Drain queued ICE candidates
             const queuedIce = pendingIceCandidatesRef.current.get(senderId) || [];

@@ -259,8 +259,8 @@ export const VideoCallOverlay: React.FC<VideoCallOverlayProps> = ({
                       player={player}
                       stream={peerInfo?.stream || null}
                       isLocal={false}
-                      isAudioMuted={peerInfo ? !peerInfo.isAudioOn : true}
-                      isVideoOff={peerInfo ? !peerInfo.isVideoOn : true}
+                      isAudioMuted={peerInfo ? peerInfo.isAudioOn === false : false}
+                      isVideoOff={peerInfo ? peerInfo.isVideoOn === false : false}
                       isScreenSharing={peerInfo?.isScreenSharing || false}
                       isSpeaking={peerInfo?.isSpeaking || false}
                       aspect="auto"

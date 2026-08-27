@@ -39,32 +39,68 @@ export const VideoTile: React.FC<VideoTileProps> = ({
 
   // Handle Video stream attachment
   useEffect(() => {
-    if (videoRef.current) {
-      if (stream) {
-        videoRef.current.srcObject = stream;
-        const videoTracks = stream.getVideoTracks();
-        const activeVideo = videoTracks.length > 0 && videoTracks[0].enabled && !isVideoOff;
-        setHasActualVideo(activeVideo);
+    const videoEl = videoRef.current;
+    if (!videoEl) return;
 
-        // Attempt play
-        videoRef.current.play().catch(() => {
-          // Autoplay policy might catch it, ignore
-        });
-      } else {
-        videoRef.current.srcObject = null;
-        setHasActualVideo(false);
+    if (stream) {
+      videoEl.srcObject = stream;
+
+      const updateTrackStatus = () => {
+        const videoTracks = stream.getVideoTracks();
+        const activeVideo =
+          videoTracks.length > 0 &&
+          videoTracks.some((t) => t.enabled && t.readyState === 'live') &&
+          !isVideoOff;
+        setHasActualVideo(activeVideo);
+      };
+
+      updateTrackStatus();
+
+      // Listen for stream track events
+      stream.onaddtrack = updateTrackStatus;
+      stream.onremovetrack = updateTrackStatus;
+
+      const vTracks = stream.getVideoTracks();
+      vTracks.forEach((t) => {
+        t.onunmute = updateTrackStatus;
+        t.onmute = updateTrackStatus;
+        t.onended = updateTrackStatus;
+      });
+
+      videoEl.onloadedmetadata = () => {
+        updateTrackStatus();
+        videoEl.play().catch(() => {});
+      };
+
+      const playPromise = videoEl.play();
+      if (playPromise !== undefined) {
+        playPromise.catch(() => {});
       }
+
+      return () => {
+        stream.onaddtrack = null;
+        stream.onremovetrack = null;
+        vTracks.forEach((t) => {
+          t.onunmute = null;
+          t.onmute = null;
+          t.onended = null;
+        });
+      };
+    } else {
+      videoEl.srcObject = null;
+      setHasActualVideo(false);
     }
   }, [stream, isVideoOff]);
 
   // Handle Remote Audio stream attachment
   useEffect(() => {
-    if (!isLocal && audioRef.current) {
+    const audioEl = audioRef.current;
+    if (!isLocal && audioEl) {
       if (stream) {
-        audioRef.current.srcObject = stream;
-        audioRef.current.play().catch(() => {});
+        audioEl.srcObject = stream;
+        audioEl.play().catch(() => {});
       } else {
-        audioRef.current.srcObject = null;
+        audioEl.srcObject = null;
       }
     }
   }, [stream, isLocal]);
@@ -87,12 +123,12 @@ export const VideoTile: React.FC<VideoTileProps> = ({
           : 'border-white/10 hover:border-white/20 shadow-lg'
       } ${aspectClass}`}
     >
-      {/* 1. Main Video Element */}
+      {/* 1. Main Video Element - Always muted to guarantee mobile autoplay; remote audio is played in dedicated <audio> */}
       <video
         ref={videoRef}
         autoPlay
         playsInline
-        muted={isLocal} // Always mute local video to avoid feedback loop
+        muted={true}
         className={`w-full h-full object-cover transition-transform duration-200 ${
           isLocal && isMirrorMode && !isScreenSharing ? 'scale-x-[-1]' : ''
         } ${showVideoFeed ? 'opacity-100' : 'hidden'}`}
