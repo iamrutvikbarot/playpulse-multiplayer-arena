@@ -40,9 +40,19 @@ export const LandingPage: React.FC<LandingPageProps> = ({
   error,
   onClearError,
 }) => {
-  // Always generate a fresh random Mahabharat character when page loads
+  // Load saved character from localStorage or generate a random one and persist it
   const [selectedCharacterId, setSelectedCharacterId] = useState<string>(() => {
+    if (typeof window !== 'undefined') {
+      const savedCharId = localStorage.getItem('playpulse_saved_character');
+      if (savedCharId) {
+        const found = CHARACTERS.find((c) => c.id === savedCharId);
+        if (found) return found.id;
+      }
+    }
     const randomChar = getRandomCharacter();
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('playpulse_saved_character', randomChar.id);
+    }
     return randomChar.id;
   });
 
